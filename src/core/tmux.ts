@@ -46,6 +46,14 @@ export function switchClient(name: string): boolean {
   return result.exitCode === 0;
 }
 
+// Sends keystrokes to the first pane of a session, followed by Enter.
+// The command string is passed as-is to the shell running in that pane —
+// no escaping is performed by muxx. Runs only on new session creation.
+export function sendKeys(session: string, cmd: string): boolean {
+  const result = run("tmux", ["send-keys", "-t", `${session}:`, cmd, "Enter"]);
+  return result.exitCode === 0;
+}
+
 export function killSession(name: string): boolean {
   const result = run("tmux", ["kill-session", "-t", name]);
   return result.exitCode === 0;

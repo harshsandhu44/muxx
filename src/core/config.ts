@@ -4,6 +4,9 @@ import { expandHome } from "./env.js";
 
 export interface ProjectConfig {
   cwd: string;
+  // startup: shell command sent to the new session on first creation only.
+  // Re-connecting to an existing session will NOT re-run this command.
+  startup?: string;
 }
 
 export interface MuxxConfig {
