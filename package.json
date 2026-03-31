@@ -10,7 +10,8 @@
     "dev": "node --import tsx/esm src/cli.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "node --import tsx/esm --test src/core/*.test.ts"
   },
   "engines": {
     "node": ">=18"
