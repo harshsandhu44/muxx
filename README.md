@@ -37,6 +37,21 @@ npm run typecheck          # type-check without emitting
 npm run clean              # remove dist/
 ```
 
+## Config
+
+Optional config file at `~/.config/muxx/config.json`. Defines named projects so you can run `muxx connect <name>` without typing the full path.
+
+```json
+{
+  "projects": {
+    "vitaq": { "cwd": "~/Code/vitaq" },
+    "muxx": { "cwd": "~/Code/personal/muxx" }
+  }
+}
+```
+
+If the target matches a project key, its `cwd` is used. Otherwise the target is treated as a directory path.
+
 ## Installation (from source)
 
 ```sh

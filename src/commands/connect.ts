@@ -4,6 +4,7 @@ import { hasTmux } from "../core/which.js";
 import { resolveDir, isInsideTmux } from "../core/env.js";
 import { resolveSessionName } from "../core/session-name.js";
 import { hasSession, createSession, attachSession, switchClient } from "../core/tmux.js";
+import { loadConfig, resolveProject } from "../core/config.js";
 
 function parseArgs(args: string[]): { target?: string; name?: string; noAttach: boolean } {
   let target: string | undefined;
@@ -31,7 +32,9 @@ export async function connect(args: string[] = []): Promise<void> {
 
   const { target, name: nameOverride, noAttach } = parseArgs(args);
 
-  const dir = resolveDir(target);
+  const config = loadConfig();
+  const project = target ? resolveProject(config, target) : undefined;
+  const dir = resolveDir(project ? project.cwd : target);
   const sessionName = resolveSessionName(dir, nameOverride);
 
   const existed = hasSession(sessionName);
