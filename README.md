@@ -22,6 +22,38 @@ A focused, dependency-light CLI for managing tmux sessions from the terminal. No
 | `muxx kill <name>` | Kill a named session |
 | `muxx current` | Print the currently attached session name |
 
+## Shell Completion
+
+muxx can print completion scripts for bash, zsh, and fish.
+
+### bash
+
+Add to `~/.bashrc`:
+
+```sh
+eval "$(muxx completion bash)"
+```
+
+### zsh
+
+Add to `~/.zshrc`:
+
+```sh
+eval "$(muxx completion zsh)"
+```
+
+Or, for a faster startup, write the script to a file on your `$fpath`:
+
+```sh
+muxx completion zsh > "${fpath[1]}/_muxx"
+```
+
+### fish
+
+```sh
+muxx completion fish > ~/.config/fish/completions/muxx.fish
+```
+
 ## Requirements
 
 - Node.js 18+

@@ -14,7 +14,8 @@ Usage:
                         [--cmd "<cmd>"]
   muxx list|ls [--json]                            List all tmux sessions
   muxx kill|k <name> [--force]                     Kill a session by name
-  muxx current|cur                                 Print the current session name`
+  muxx current|cur                                 Print the current session name
+  muxx completion <bash|zsh|fish>                  Print shell completion script`
   );
 }
 
@@ -52,6 +53,11 @@ async function main(): Promise<void> {
       // no subcommand: connect to current directory
       const { connect } = await import("./commands/connect.js");
       await connect([]);
+      break;
+    }
+    case "completion": {
+      const { completion } = await import("./commands/completion.js");
+      completion(rest);
       break;
     }
     case "--help":
