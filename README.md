@@ -65,6 +65,35 @@ npm run build
 npm link
 ```
 
+## Releases
+
+Releases are fully automated via [semantic-release](https://github.com/semantic-release/semantic-release) on every push to `main`.
+
+### How it works
+
+1. Every push to `main` runs typecheck, tests, and build.
+2. If all pass, `semantic-release` analyzes commits since the last release.
+3. If releasable commits exist, it bumps the version, publishes to npm, and creates a GitHub release.
+
+### Commit convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). Only certain commit types trigger a release:
+
+| Commit type | Release type |
+|---|---|
+| `fix:` | patch (e.g. `0.1.0` → `0.1.1`) |
+| `feat:` | minor (e.g. `0.1.0` → `0.2.0`) |
+| `BREAKING CHANGE:` in footer | major (e.g. `0.1.0` → `1.0.0`) |
+
+Types like `chore:`, `docs:`, `test:`, `refactor:` do not trigger a release.
+
+### Required GitHub secrets
+
+| Secret | Description |
+|---|---|
+| `NPM_TOKEN` | npm access token with publish rights (create at npmjs.com → Access Tokens) |
+| `GITHUB_TOKEN` | Automatically provided by GitHub Actions — no setup needed |
+
 ## Smoke test (pre-publish verification)
 
 ```sh
