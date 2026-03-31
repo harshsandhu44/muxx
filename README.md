@@ -27,6 +27,12 @@ A focused, dependency-light CLI for managing tmux sessions from the terminal. No
 - Node.js 18+
 - tmux installed on the system
 
+## Installation
+
+```sh
+npm install -g muxx
+```
+
 ## Development
 
 ```sh
@@ -57,4 +63,22 @@ If the target matches a project key, its `cwd` is used. Otherwise the target is 
 ```sh
 npm run build
 npm link
+```
+
+## Smoke test (pre-publish verification)
+
+```sh
+# 1. Build and pack (produces muxx-<version>.tgz)
+npm run build
+npm pack
+
+# 2. Install the tarball globally
+npm install -g ./muxx-*.tgz
+
+# 3. Verify the binary runs
+muxx --help
+muxx list
+
+# 4. Uninstall when done
+npm uninstall -g muxx
 ```

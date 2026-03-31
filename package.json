@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "node --import tsx/esm src/cli.ts",
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/cli.js",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "test": "node --import tsx/esm --test src/core/*.test.ts"
+    "test": "node --import tsx/esm --test src/core/*.test.ts",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=18"
