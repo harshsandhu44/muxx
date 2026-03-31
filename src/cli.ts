@@ -21,7 +21,7 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       const { kill } = await import("./commands/kill.js");
-      await kill(rest[0]);
+      await kill(rest[0], rest.slice(1));
       break;
     }
     case "current": {
