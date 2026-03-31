@@ -4,9 +4,10 @@ const [, , command, ...rest] = process.argv;
 
 async function main(): Promise<void> {
   switch (command) {
-    case "list": {
+    case "list":
+    case "ls": {
       const { list } = await import("./commands/list.js");
-      await list();
+      await list(rest);
       break;
     }
     case "connect": {
@@ -33,7 +34,7 @@ async function main(): Promise<void> {
         `muxx — minimal tmux session CLI
 
 Usage:
-  muxx list              List all tmux sessions
+  muxx list|ls           List all tmux sessions
   muxx connect [target]  Attach to a session (defaults to most recent)
   muxx kill <name>       Kill a session by name
   muxx current           Print the currently attached session`
