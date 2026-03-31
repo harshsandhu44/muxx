@@ -71,7 +71,7 @@ _muxx() {
   esac
 }
 
-_muxx
+compdef _muxx muxx
 `;
 
 const fish = `\

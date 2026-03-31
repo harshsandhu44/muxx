@@ -15,12 +15,14 @@ A focused, dependency-light CLI for managing tmux sessions from the terminal. No
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `muxx list` | List all tmux sessions |
-| `muxx connect [target]` | Attach to a session (omit target to use most recent) |
-| `muxx kill <name>` | Kill a named session |
-| `muxx current` | Print the currently attached session name |
+| Command | Alias | Description |
+|---|---|---|
+| `muxx` | | Connect to a session in the current directory |
+| `muxx connect [dir] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Connect to or create a tmux session |
+| `muxx list [--json]` | `ls` | List all tmux sessions |
+| `muxx kill <name> [--force]` | `k` | Kill a session by name |
+| `muxx current` | `cur` | Print the current session name |
+| `muxx completion <bash\|zsh\|fish>` | | Print shell completion script |
 
 ## Shell Completion
 
@@ -36,19 +38,23 @@ eval "$(muxx completion bash)"
 
 ### zsh
 
-Add to `~/.zshrc`:
+Add to `~/.zshrc` (after `compinit`):
 
 ```sh
 eval "$(muxx completion zsh)"
 ```
 
-Or, for a faster startup, write the script to a file on your `$fpath`:
+Or write to a file in your `$fpath` for faster startup (run once):
 
 ```sh
 muxx completion zsh > "${fpath[1]}/_muxx"
 ```
 
+> **Note:** The `eval` line must appear after `compinit` in your `~/.zshrc`. If you use a framework like Oh My Zsh or Prezto, `compinit` is called for you — just add the `eval` line after the framework is loaded.
+
 ### fish
+
+Run once to install:
 
 ```sh
 muxx completion fish > ~/.config/fish/completions/muxx.fish
