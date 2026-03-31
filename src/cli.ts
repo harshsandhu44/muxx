@@ -10,9 +10,10 @@ async function main(): Promise<void> {
       await list(rest);
       break;
     }
-    case "connect": {
+    case "connect":
+    case "c": {
       const { connect } = await import("./commands/connect.js");
-      await connect(rest[0]);
+      await connect(rest);
       break;
     }
     case "kill": {
