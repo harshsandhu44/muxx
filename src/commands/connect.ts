@@ -25,7 +25,7 @@ function parseArgs(args: string[]): { target?: string; name?: string; noAttach: 
 
 export async function connect(args: string[] = []): Promise<void> {
   if (!hasTmux()) {
-    console.error("tmux is not available");
+    console.error("tmux not found in PATH");
     process.exit(1);
   }
 

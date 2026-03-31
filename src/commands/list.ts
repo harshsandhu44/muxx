@@ -7,7 +7,7 @@ export async function list(args: string[] = []): Promise<void> {
   const json = args.includes("--json");
 
   if (!hasTmux()) {
-    console.error("error: tmux is not installed or not in PATH");
+    console.error("tmux not found in PATH");
     process.exit(1);
   }
 

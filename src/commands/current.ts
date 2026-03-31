@@ -1,7 +1,7 @@
 // muxx current — print the name of the currently attached session
 
 import { isInsideTmux } from "../core/env.js";
-import { run } from "../core/run.js";
+import { currentSession } from "../core/tmux.js";
 
 export async function current(): Promise<void> {
   if (!isInsideTmux()) {
@@ -9,11 +9,11 @@ export async function current(): Promise<void> {
     process.exit(1);
   }
 
-  const { stdout, exitCode } = run("tmux", ["display-message", "-p", "#S"]);
-  if (exitCode !== 0) {
+  const name = currentSession();
+  if (!name) {
     console.error("could not determine current session");
     process.exit(1);
   }
 
-  process.stdout.write(stdout.trimEnd() + "\n");
+  console.log(name);
 }

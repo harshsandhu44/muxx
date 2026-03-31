@@ -32,13 +32,13 @@ async function main(): Promise<void> {
     }
     default: {
       console.log(
-        `muxx — minimal tmux session CLI
+        `muxx — minimal tmux session manager
 
 Usage:
-  muxx list|ls           List all tmux sessions
-  muxx connect [target]  Attach to a session (defaults to most recent)
-  muxx kill <name>       Kill a session by name
-  muxx current           Print the currently attached session`
+  muxx list|ls [--json]                         List all tmux sessions
+  muxx connect [dir] [--name <n>] [--no-attach] Connect to a session (default: cwd)
+  muxx kill <name> [--force]                    Kill a session by name
+  muxx current                                  Print the current session`
       );
       if (command !== undefined && command !== "--help" && command !== "-h") {
         console.error(`\nUnknown command: ${command}`);
