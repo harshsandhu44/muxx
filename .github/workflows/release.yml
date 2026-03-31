@@ -11,16 +11,18 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run typecheck
-      - run: bun test
+      - run: bun run test
       - run: bun run build
       - run: bunx semantic-release
         env:
