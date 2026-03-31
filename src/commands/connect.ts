@@ -9,6 +9,7 @@ import { resolveDir, isInsideTmux } from "../core/env.js";
 import { resolveSessionName } from "../core/session-name.js";
 import { hasSession, createSession, sendKeys, attachSession, switchClient } from "../core/tmux.js";
 import { loadConfig, resolveProject } from "../core/config.js";
+import { success, info, error } from "../lib/out.js";
 
 function parseArgs(args: string[]): { target?: string; name?: string; noAttach: boolean; cmd?: string } {
   let target: string | undefined;
@@ -33,7 +34,7 @@ function parseArgs(args: string[]): { target?: string; name?: string; noAttach: 
 
 export async function connect(args: string[] = []): Promise<void> {
   if (!hasTmux()) {
-    console.error("tmux not found in PATH");
+    error("tmux not found in PATH");
     process.exit(1);
   }
 
@@ -52,13 +53,15 @@ export async function connect(args: string[] = []): Promise<void> {
   if (!existed) {
     const ok = createSession(sessionName, dir);
     if (!ok) {
-      console.error(`failed to create session: ${sessionName}`);
+      error(`failed to create session: ${sessionName}`);
       process.exit(1);
     }
-    console.log(`created: ${sessionName}`);
+    success(`created: ${sessionName}`);
     if (startupCmd) {
       sendKeys(sessionName, startupCmd);
     }
+  } else {
+    info(`reused: ${sessionName}`);
   }
 
   if (noAttach) return;
@@ -66,13 +69,13 @@ export async function connect(args: string[] = []): Promise<void> {
   if (isInsideTmux()) {
     const ok = switchClient(sessionName);
     if (!ok) {
-      console.error(`failed to switch to session: ${sessionName}`);
+      error(`failed to switch to session: ${sessionName}`);
       process.exit(1);
     }
   } else {
     const ok = attachSession(sessionName);
     if (!ok) {
-      console.error(`failed to attach to session: ${sessionName}`);
+      error(`failed to attach to session: ${sessionName}`);
       process.exit(1);
     }
   }
