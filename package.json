@@ -1,5 +1,5 @@
 {
-  "name": "muxx",
+  "name": "@harshsandhu44/muxx",
   "version": "0.1.0",
   "description": "Minimal tmux session automation CLI",
   "type": "module",
@@ -26,6 +26,9 @@
     "semantic-release": "^25.0.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"

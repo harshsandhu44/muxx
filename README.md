@@ -30,7 +30,7 @@ A focused, dependency-light CLI for managing tmux sessions from the terminal. No
 ## Installation
 
 ```sh
-npm install -g muxx
+npm install -g @harshsandhu44/muxx
 ```
 
 ## Development
