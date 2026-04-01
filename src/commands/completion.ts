@@ -11,7 +11,11 @@ _muxx_completion() {
 
   case "$cmd" in
     connect|c)
-      COMPREPLY=(\$(compgen -W "--name --no-attach --cmd" -- "$cur"))
+      if [[ "$cur" == -* ]]; then
+        COMPREPLY=(\$(compgen -W "--name --no-attach --cmd" -- "$cur"))
+      else
+        COMPREPLY=(\$(compgen -d -- "$cur"))
+      fi
       ;;
     list|ls)
       COMPREPLY=(\$(compgen -W "--json" -- "$cur"))
@@ -53,6 +57,7 @@ _muxx() {
   case "\$words[2]" in
     connect|c)
       _arguments \\
+        '1:directory:_directories' \\
         '--name[override session name]:name' \\
         '--no-attach[create without attaching]' \\
         '--cmd[command to run on new session]:command'
@@ -77,7 +82,8 @@ compdef _muxx muxx
 const fish = `\
 # muxx fish completion
 
-complete -c muxx -f
+complete -c muxx -n '__fish_seen_subcommand_from connect c' -F
+complete -c muxx -n 'not __fish_seen_subcommand_from connect c list ls kill k current cur completion' -f
 
 complete -c muxx -n 'not __fish_seen_subcommand_from connect c list ls kill k current cur completion' -a 'connect' -d 'Connect to or create a tmux session'
 complete -c muxx -n 'not __fish_seen_subcommand_from connect c list ls kill k current cur completion' -a 'c' -d 'Connect to or create a tmux session'
