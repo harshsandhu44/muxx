@@ -2,16 +2,20 @@
 
 Minimal tmux session automation CLI.
 
-## Goal
+## What it is
 
-A focused, dependency-light CLI for managing tmux sessions from the terminal. No TUI, no plugins, no telemetry — just a clean interface over `tmux` commands.
+A focused CLI for managing tmux sessions from the terminal. No TUI, no plugins, no telemetry — just a clean interface over `tmux` commands.
 
-## MVP Scope
+## Requirements
 
-- List active tmux sessions
-- Attach to a session by name or default to the most recent
-- Kill a session by name
-- Print the currently attached session
+- Rust stable (for building from source)
+- tmux installed on the system
+
+## Installation
+
+```sh
+cargo install muxx
+```
 
 ## Commands
 
@@ -24,9 +28,58 @@ A focused, dependency-light CLI for managing tmux sessions from the terminal. No
 | `muxx current` | `cur` | Print the current session name |
 | `muxx completion <bash\|zsh\|fish>` | | Print shell completion script |
 
-## Shell Completion
+## Examples
 
-muxx can print completion scripts for bash, zsh, and fish.
+```sh
+# Connect to session in current directory (creates if it doesn't exist)
+muxx
+
+# Connect to a specific directory
+muxx connect ~/Code/myapp
+
+# Connect using a config alias
+muxx connect myapp
+
+# Create a session without attaching
+muxx connect --no-attach ~/Code/myapp
+
+# Override the session name
+muxx connect --name work ~/Code/myapp
+
+# Run a command when the session is first created
+muxx connect --cmd "npm run dev" ~/Code/myapp
+
+# List sessions
+muxx list
+muxx list --json
+
+# Kill a session
+muxx kill myapp
+
+# Print current session name
+muxx current
+```
+
+## Config
+
+Optional config file at `~/.config/muxx/config.json`. Defines named project aliases so you can run `muxx connect <name>` without typing the full path.
+
+```json
+{
+  "projects": {
+    "myapp": { "cwd": "~/Code/myapp" },
+    "api": { "cwd": "~/Code/api", "startup": "cargo run" }
+  }
+}
+```
+
+- If the target matches a project key, its `cwd` is used as the session directory.
+- `startup` is a shell command sent to the session's first pane on first creation only. Re-connecting to an existing session will not re-run it.
+- `--cmd` on the command line takes precedence over `startup` in the config.
+
+## Shell Completions
+
+muxx generates completion scripts via `clap_complete`.
 
 ### bash
 
@@ -50,8 +103,6 @@ Or write to a file in your `$fpath` for faster startup (run once):
 muxx completion zsh > "${fpath[1]}/_muxx"
 ```
 
-> **Note:** The `eval` line must appear after `compinit` in your `~/.zshrc`. If you use a framework like Oh My Zsh or Prezto, `compinit` is called for you — just add the `eval` line after the framework is loaded.
-
 ### fish
 
 Run once to install:
@@ -60,92 +111,52 @@ Run once to install:
 muxx completion fish > ~/.config/fish/completions/muxx.fish
 ```
 
-## Requirements
-
-- Node.js 18+
-- tmux installed on the system
-
-## Installation
-
-```sh
-npm install -g @harshsandhu44/muxx
-```
-
 ## Development
 
 ```sh
-npm install
-npm run dev -- list        # run via tsx (no build needed)
-npm run build              # compile to dist/
-npm run typecheck          # type-check without emitting
-npm run clean              # remove dist/
-```
+# Build and run
+cargo run -- list
+cargo run -- --help
 
-## Config
+# Run tests
+cargo test
 
-Optional config file at `~/.config/muxx/config.json`. Defines named projects so you can run `muxx connect <name>` without typing the full path.
+# Lint and format
+cargo fmt
+cargo clippy -- -D warnings
 
-```json
-{
-  "projects": {
-    "vitaq": { "cwd": "~/Code/vitaq" },
-    "muxx": { "cwd": "~/Code/personal/muxx" }
-  }
-}
-```
-
-If the target matches a project key, its `cwd` is used. Otherwise the target is treated as a directory path.
-
-## Installation (from source)
-
-```sh
-npm run build
-npm link
+# Build release binary
+cargo build --release
+./target/release/muxx --help
 ```
 
 ## Releases
 
-Releases are fully automated via [semantic-release](https://github.com/semantic-release/semantic-release) on every push to `main`.
+Releases are fully automated via [release-plz](https://release-plz.dev) on every push to `main`.
 
 ### How it works
 
-1. Every push to `main` runs typecheck, tests, and build.
-2. If all pass, `semantic-release` analyzes commits since the last release.
-3. If releasable commits exist, it bumps the version, publishes to npm, and creates a GitHub release.
+1. Every push to `main` runs format check, clippy, tests, and a release build.
+2. If all pass, release-plz analyzes commits since the last tag.
+3. If releasable commits exist, it:
+   - Opens a release PR that bumps the version in `Cargo.toml` and generates a changelog
+   - When that PR is merged, publishes the crate to [crates.io](https://crates.io) and creates a GitHub release
 
 ### Commit convention
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/). Only certain commit types trigger a release:
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 | Commit type | Release type |
 |---|---|
-| `fix:` | patch (e.g. `0.1.0` → `0.1.1`) |
-| `feat:` | minor (e.g. `0.1.0` → `0.2.0`) |
-| `BREAKING CHANGE:` in footer | major (e.g. `0.1.0` → `1.0.0`) |
+| `fix:` | patch (e.g. `1.2.2` → `1.2.3`) |
+| `feat:` | minor (e.g. `1.2.2` → `1.3.0`) |
+| `BREAKING CHANGE:` in footer | major (e.g. `1.2.2` → `2.0.0`) |
 
 Types like `chore:`, `docs:`, `test:`, `refactor:` do not trigger a release.
 
-### Required GitHub secrets
+### Required secrets
 
 | Secret | Description |
 |---|---|
-| `NPM_TOKEN` | npm access token with publish rights (create at npmjs.com → Access Tokens) |
+| `CARGO_REGISTRY_TOKEN` | crates.io API token — create at crates.io → Account Settings → API Tokens |
 | `GITHUB_TOKEN` | Automatically provided by GitHub Actions — no setup needed |
-
-## Smoke test (pre-publish verification)
-
-```sh
-# 1. Build and pack (produces muxx-<version>.tgz)
-npm run build
-npm pack
-
-# 2. Install the tarball globally
-npm install -g ./muxx-*.tgz
-
-# 3. Verify the binary runs
-muxx --help
-muxx list
-
-# 4. Uninstall when done
-npm uninstall -g muxx
-```
