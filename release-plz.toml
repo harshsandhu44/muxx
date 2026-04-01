@@ -1,2 +1,4 @@
 [workspace]
+# Semver compatibility checks are skipped because muxx is a binary crate —
+# there is no public library API to check for breaking changes.
 semver_check = false
