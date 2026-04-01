@@ -24,3 +24,12 @@ export function run(cmd: string, args: string[], opts: RunOptions = {}): RunResu
     exitCode: result.status ?? 1,
   };
 }
+
+// For interactive commands that need direct terminal access (e.g. tmux attach-session).
+export function runInteractive(cmd: string, args: string[], opts: RunOptions = {}): number {
+  const result = spawnSync(cmd, args, {
+    cwd: opts.cwd,
+    stdio: "inherit",
+  });
+  return result.status ?? 1;
+}

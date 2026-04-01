@@ -1,6 +1,6 @@
 // Core tmux interaction layer — all tmux exec calls go through here
 
-import { run } from "./run.js";
+import { run, runInteractive } from "./run.js";
 import type { TmuxSession } from "../types/index.js";
 
 // tmux list-sessions -F "#{session_name}:#{session_windows}:#{session_attached}:#{session_created}"
@@ -37,13 +37,11 @@ export function createSession(name: string, cwd: string): boolean {
 }
 
 export function attachSession(name: string): boolean {
-  const result = run("tmux", ["attach-session", "-t", name]);
-  return result.exitCode === 0;
+  return runInteractive("tmux", ["attach-session", "-t", name]) === 0;
 }
 
 export function switchClient(name: string): boolean {
-  const result = run("tmux", ["switch-client", "-t", name]);
-  return result.exitCode === 0;
+  return runInteractive("tmux", ["switch-client", "-t", name]) === 0;
 }
 
 // Sends keystrokes to the first pane of a session, followed by Enter.
