@@ -21,6 +21,7 @@ pub enum Commands {
     #[command(alias = "c")]
     Connect {
         /// Directory or config alias to connect to (defaults to current directory)
+        #[arg(value_hint = clap::ValueHint::DirPath)]
         dir: Option<String>,
         /// Override the session name
         #[arg(long)]
