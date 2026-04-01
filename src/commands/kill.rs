@@ -1,6 +1,7 @@
 use anyhow::Result;
 
 use crate::core::{
+    env::is_inside_tmux,
     output::{error, success},
     tmux::{current_session, has_session, has_tmux, kill_session},
 };
@@ -16,7 +17,7 @@ pub fn run(name: &str, force: bool) -> Result<()> {
         std::process::exit(1);
     }
 
-    if !force {
+    if !force && is_inside_tmux() {
         if let Some(current) = current_session() {
             if current == name {
                 error(&format!(
