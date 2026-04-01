@@ -25,6 +25,7 @@ muxx does not aim to provide:
 - zoxide or directory-jumping integration
 - A plugin or extension system
 - Telemetry or usage analytics
+- A feature-complete replacement for sesh or tmuxinator
 
 ## Requirements
 
@@ -36,6 +37,10 @@ muxx does not aim to provide:
 ```sh
 cargo install muxx
 ```
+
+### Distribution
+
+`cargo install` is the only first-class install method right now. Pre-built binaries are attached to each [GitHub release](https://github.com/harshsandhu44/muxx/releases) but there is no install script or Homebrew tap yet. A Homebrew tap is planned for a future release.
 
 ## Commands
 
@@ -93,6 +98,8 @@ Optional config file at `~/.config/muxx/config.json`. Defines named project alia
 }
 ```
 
+See [`examples/config.json`](examples/config.json) for a fuller example.
+
 - If the target matches a project key, its `cwd` is used as the session directory.
 - `startup` is a shell command sent to the session's first pane on first creation only. Re-connecting to an existing session will not re-run it.
 - `--cmd` on the command line takes precedence over `startup` in the config.
@@ -131,6 +138,15 @@ Run once to install:
 muxx completion fish > ~/.config/fish/completions/muxx.fish
 ```
 
+## Shell integration
+
+muxx is designed to fit naturally into shell workflows. All output is plain text or `--json`, so it composes with standard tools.
+
+The [`examples/`](examples/) directory has ready-to-use snippets:
+
+- [`zsh-integration.zsh`](examples/zsh-integration.zsh) — a short `mx` wrapper function and an optional `mxp` interactive picker (requires `fzf`)
+- [`tmux-status.conf`](examples/tmux-status.conf) — how to show the current session name in the tmux status bar
+
 ## Troubleshooting
 
 **`tmux: command not found`**
@@ -143,11 +159,14 @@ Make sure the `eval "$(muxx completion <shell>)"` line is in your shell rc file 
 muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas, unquoted strings, or invalid JSON. Run `cat ~/.config/muxx/config.json | python3 -m json.tool` to validate.
 
 **Behavior differs inside vs outside tmux**
-`muxx` (no subcommand) connects to a session for the current directory. When run inside an existing tmux session, it will switch to or create that session. When run outside tmux, it attaches. Use `--no-attach` if you want to create a session without switching to it.
+When run inside an existing tmux session, muxx uses `switch-client` to move to the target session. When run outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching to it at all.
+
+**Startup command did not run / ran unexpectedly**
+`startup` in config and `--cmd` on the CLI are only sent to the session's first pane on *new session creation*. Re-connecting to an existing session will not re-run it. To force a re-run, kill the session first (`muxx kill <name>`) and reconnect.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and commit conventions. For a quick orientation to the codebase, see [docs/architecture.md](docs/architecture.md).
 
 ## Development
 

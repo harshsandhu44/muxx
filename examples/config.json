@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "muxx":    { "cwd": "~/Code/muxx" },
+    "api":     { "cwd": "~/Code/api",    "startup": "cargo run" },
+    "web":     { "cwd": "~/Code/web",    "startup": "npm run dev" },
+    "dotfiles":{ "cwd": "~/dotfiles" }
+  }
+}
