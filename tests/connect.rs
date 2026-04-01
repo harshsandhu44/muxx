@@ -91,9 +91,13 @@ fn connect_errors_on_nonexistent_directory() {
 
 #[test]
 fn connect_alias_c_works() {
+    let session = "muxx-test-alias-c";
     Command::cargo_bin("muxx")
         .unwrap()
-        .args(["c", "--no-attach"])
+        .args(["c", "--no-attach", "--name", session])
         .assert()
         .success();
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
 }
