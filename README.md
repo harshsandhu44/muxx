@@ -1,10 +1,30 @@
 # muxx
 
+[![crates.io](https://img.shields.io/crates/v/muxx.svg)](https://crates.io/crates/muxx)
+[![CI](https://github.com/harshsandhu44/muxx/actions/workflows/release.yml/badge.svg)](https://github.com/harshsandhu44/muxx/actions/workflows/release.yml)
+
 Minimal tmux session automation CLI.
 
 ## What it is
 
 A focused CLI for managing tmux sessions from the terminal. No TUI, no plugins, no telemetry — just a clean interface over `tmux` commands.
+
+## Design principles
+
+- **Minimal by default.** muxx does one thing: manage tmux sessions.
+- **No surprises.** Every action maps directly to a tmux operation.
+- **Config is optional.** Works without any config file; config only adds named aliases.
+- **Composable.** Plain text and JSON output so it fits into scripts and other tools.
+
+## Non-goals
+
+muxx does not aim to provide:
+
+- A TUI or interactive session picker
+- Pane and window orchestration
+- zoxide or directory-jumping integration
+- A plugin or extension system
+- Telemetry or usage analytics
 
 ## Requirements
 
@@ -110,6 +130,24 @@ Run once to install:
 ```sh
 muxx completion fish > ~/.config/fish/completions/muxx.fish
 ```
+
+## Troubleshooting
+
+**`tmux: command not found`**
+muxx requires tmux to be installed and available in `PATH`. Install it via your system package manager (e.g. `brew install tmux`, `apt install tmux`).
+
+**Shell completions not working**
+Make sure the `eval "$(muxx completion <shell>)"` line is in your shell rc file and that your shell was restarted (or the file was sourced). For zsh, the eval must come after `compinit`.
+
+**Config parse error on startup**
+muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas, unquoted strings, or invalid JSON. Run `cat ~/.config/muxx/config.json | python3 -m json.tool` to validate.
+
+**Behavior differs inside vs outside tmux**
+`muxx` (no subcommand) connects to a session for the current directory. When run inside an existing tmux session, it will switch to or create that session. When run outside tmux, it attaches. Use `--no-attach` if you want to create a session without switching to it.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development
 
