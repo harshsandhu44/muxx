@@ -1,0 +1,142 @@
+/// Convert a raw string or path into a safe tmux session name.
+///
+/// Rules applied in order:
+///   1. Extract the last non-empty path segment if the input contains '/'
+///   2. Lowercase
+///   3. Trim whitespace
+///   4. Replace spaces with hyphens
+///   5. Replace invalid characters (not a-z, 0-9, hyphen, underscore) with hyphens
+///   6. Collapse repeated hyphens
+///   7. Remove leading/trailing hyphens
+pub fn sanitize_session_name(input: &str) -> String {
+    // Step 1: extract basename if path-like (contains '/')
+    let base = if input.contains('/') {
+        input.split('/').rfind(|s| !s.is_empty()).unwrap_or(input)
+    } else {
+        input
+    };
+
+    // Steps 2-7: lowercase, trim, sanitize chars, collapse hyphens, strip edges
+    let lowered = base.trim().to_lowercase();
+
+    let mut result = String::with_capacity(lowered.len());
+    let mut last_was_hyphen = false;
+
+    for ch in lowered.chars() {
+        if ch == ' ' || ch == '-' || (!ch.is_ascii_alphanumeric() && ch != '_') {
+            if !last_was_hyphen && !result.is_empty() {
+                result.push('-');
+                last_was_hyphen = true;
+            }
+        } else {
+            result.push(ch);
+            last_was_hyphen = false;
+        }
+    }
+
+    // Strip trailing hyphen
+    let result = result.trim_end_matches('-').to_string();
+
+    result
+}
+
+/// Resolve the effective session name, letting an explicit override win.
+/// Falls back to sanitizing the raw input when no override is provided.
+pub fn resolve_session_name(raw: &str, override_name: Option<&str>) -> String {
+    match override_name {
+        Some(o) if !o.trim().is_empty() => sanitize_session_name(o),
+        _ => sanitize_session_name(raw),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_basename_from_absolute_path() {
+        assert_eq!(
+            sanitize_session_name("/Users/harsh/Code/my-project"),
+            "my-project"
+        );
+    }
+
+    #[test]
+    fn extracts_basename_from_path_with_trailing_slash() {
+        assert_eq!(sanitize_session_name("/tmp/"), "tmp");
+    }
+
+    #[test]
+    fn lowercases_input() {
+        assert_eq!(sanitize_session_name("MyProject"), "myproject");
+    }
+
+    #[test]
+    fn preserves_underscores() {
+        assert_eq!(sanitize_session_name("UPPER_CASE"), "upper_case");
+    }
+
+    #[test]
+    fn replaces_spaces_with_hyphens() {
+        assert_eq!(sanitize_session_name("My Cool App"), "my-cool-app");
+    }
+
+    #[test]
+    fn trims_leading_and_trailing_whitespace() {
+        assert_eq!(sanitize_session_name("  hello world  "), "hello-world");
+    }
+
+    #[test]
+    fn replaces_invalid_characters_with_hyphens() {
+        assert_eq!(sanitize_session_name("foo@bar!baz"), "foo-bar-baz");
+    }
+
+    #[test]
+    fn collapses_repeated_hyphens() {
+        assert_eq!(sanitize_session_name("foo---bar"), "foo-bar");
+    }
+
+    #[test]
+    fn removes_leading_and_trailing_hyphens() {
+        assert_eq!(sanitize_session_name("-foo-"), "foo");
+    }
+
+    #[test]
+    fn single_segment_not_treated_as_path() {
+        assert_eq!(sanitize_session_name("myapp"), "myapp");
+    }
+
+    #[test]
+    fn two_segment_path_extracts_last_segment() {
+        assert_eq!(sanitize_session_name("Code/my-project"), "my-project");
+    }
+
+    #[test]
+    fn resolve_sanitizes_raw_when_no_override() {
+        assert_eq!(resolve_session_name("/home/user/my app", None), "my-app");
+    }
+
+    #[test]
+    fn resolve_uses_override_when_provided() {
+        assert_eq!(
+            resolve_session_name("/home/user/my app", Some("Custom Name")),
+            "custom-name"
+        );
+    }
+
+    #[test]
+    fn resolve_ignores_blank_override() {
+        assert_eq!(
+            resolve_session_name("/home/user/myapp", Some("   ")),
+            "myapp"
+        );
+    }
+
+    #[test]
+    fn resolve_override_with_no_raw_path() {
+        assert_eq!(
+            resolve_session_name("ignored", Some("My Override")),
+            "my-override"
+        );
+    }
+}
