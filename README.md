@@ -47,7 +47,8 @@ cargo install muxx
 | Command | Alias | Description |
 |---|---|---|
 | `muxx` | | Connect to a session in the current directory |
-| `muxx connect [dir] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Connect to or create a tmux session |
+| `muxx connect [dir] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Connect to or create a tmux session by directory |
+| `muxx attach <name>` | `a` | Attach or switch to an existing session by name |
 | `muxx list [--json]` | `ls` | List all tmux sessions |
 | `muxx kill <name> [--force]` | `k` | Kill a session by name |
 | `muxx current` | `cur` | Print the current session name |
@@ -74,6 +75,10 @@ muxx connect --name work ~/Code/myapp
 # Run a command when the session is first created
 muxx connect --cmd "npm run dev" ~/Code/myapp
 
+# Attach to an existing session by name (never creates a session)
+muxx attach work
+muxx a work               # alias
+
 # List sessions
 muxx list
 muxx list --json
@@ -84,6 +89,15 @@ muxx kill myapp
 # Print current session name
 muxx current
 ```
+
+### `connect` vs `attach`
+
+| | `connect` | `attach` |
+|---|---|---|
+| Input | directory path or config alias | tmux session name |
+| Creates session? | yes (if not exists) | no |
+| Runs startup command? | yes (if configured) | no |
+| Use when | starting work in a project | returning to a named session |
 
 ## Config
 

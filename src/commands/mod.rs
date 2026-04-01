@@ -1,3 +1,4 @@
+pub mod attach;
 pub mod completion;
 pub mod connect;
 pub mod current;

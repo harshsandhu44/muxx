@@ -17,6 +17,13 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Attach to or switch to an existing session by name
+    #[command(alias = "a")]
+    Attach {
+        /// Name of the tmux session to attach to
+        session: String,
+    },
+
     /// Connect to or create a session (default when no subcommand given)
     #[command(alias = "c")]
     Connect {
@@ -69,6 +76,7 @@ pub fn run() -> anyhow::Result<()> {
 
     match cli.command {
         None => commands::connect::run(None, None, false, None),
+        Some(Commands::Attach { session }) => commands::attach::run(&session),
         Some(Commands::Connect {
             dir,
             name,

@@ -5,6 +5,7 @@ use crate::core::{
     env::{is_inside_tmux, resolve_dir},
     output::{error, info, success},
     session_name::resolve_session_name,
+    state,
     tmux::{attach_session, create_session, has_session, has_tmux, send_keys, switch_client},
 };
 
@@ -55,6 +56,8 @@ pub fn run(
     if no_attach {
         return Ok(());
     }
+
+    state::save_last_session(&session_name);
 
     if is_inside_tmux() {
         if !switch_client(&session_name) {

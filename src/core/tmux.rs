@@ -111,6 +111,11 @@ pub fn switch_client(name: &str) -> bool {
     run_interactive(&["switch-client", "-t", name]) == 0
 }
 
+/// Switches the current tmux client to the previously active session.
+pub fn switch_to_last() -> bool {
+    run_interactive(&["switch-client", "-l"]) == 0
+}
+
 /// Sends a command to the first pane of a session, followed by Enter.
 /// Used only on new session creation — no escaping is performed.
 pub fn send_keys(session: &str, cmd: &str) -> bool {
