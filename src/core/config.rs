@@ -27,8 +27,11 @@ fn config_path() -> PathBuf {
 }
 
 pub fn load_config() -> MuxxConfig {
-    let path = config_path();
-    match std::fs::read_to_string(&path) {
+    load_config_from(&config_path())
+}
+
+fn load_config_from(path: &std::path::Path) -> MuxxConfig {
+    match std::fs::read_to_string(path) {
         Ok(raw) => match serde_json::from_str::<MuxxConfig>(&raw) {
             Ok(cfg) => cfg,
             Err(e) => {
@@ -94,10 +97,9 @@ mod tests {
 
     #[test]
     fn load_config_returns_default_when_file_missing() {
-        // Point to a path that doesn't exist
-        std::env::set_var("MUXX_CONFIG_PATH", "/tmp/muxx-test-nonexistent-config.json");
-        let cfg = load_config();
-        std::env::remove_var("MUXX_CONFIG_PATH");
+        let cfg = load_config_from(std::path::Path::new(
+            "/tmp/muxx-test-nonexistent-config.json",
+        ));
         assert!(cfg.projects.is_empty());
     }
 
@@ -106,9 +108,7 @@ mod tests {
         use std::io::Write;
         let mut f = tempfile::NamedTempFile::new().unwrap();
         write!(f, r#"{{"projects":{{"foo":{{"cwd":"/tmp/foo"}}}}}}"#).unwrap();
-        std::env::set_var("MUXX_CONFIG_PATH", f.path());
-        let cfg = load_config();
-        std::env::remove_var("MUXX_CONFIG_PATH");
+        let cfg = load_config_from(f.path());
         assert!(resolve_project(&cfg, "foo").is_some());
     }
 }
