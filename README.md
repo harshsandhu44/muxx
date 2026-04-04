@@ -47,7 +47,7 @@ cargo install muxx
 | Command | Alias | Description |
 |---|---|---|
 | `muxx` | | Connect to a session in the current directory |
-| `muxx connect [dir] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Connect to or create a tmux session by directory |
+| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Attach to an existing session by name, or create one from a directory |
 | `muxx attach <name>` | `a` | Attach or switch to an existing session by name |
 | `muxx list [--json]` | `ls` | List all tmux sessions |
 | `muxx kill <name> [--force]` | `k` | Kill a session by name |
@@ -60,20 +60,25 @@ cargo install muxx
 # Connect to session in current directory (creates if it doesn't exist)
 muxx
 
-# Connect to a specific directory
-muxx connect ~/Code/myapp
+# Attach to an existing session by name
+muxx connect dotfiles
+muxx c dotfiles           # alias
 
 # Connect using a config alias
 muxx connect myapp
 
+# Create a session from a specific directory
+muxx connect --cwd ~/Code/myapp
+muxx connect -c ~/Code/myapp    # short flag
+
 # Create a session without attaching
-muxx connect --no-attach ~/Code/myapp
+muxx connect -c ~/Code/myapp --no-attach
 
-# Override the session name
-muxx connect --name work ~/Code/myapp
+# Override the session name (only with --cwd)
+muxx connect -c ~/Code/myapp --name work
 
-# Run a command when the session is first created
-muxx connect --cmd "npm run dev" ~/Code/myapp
+# Run a command when the session is first created (only with --cwd or config alias)
+muxx connect -c ~/Code/myapp --cmd "npm run dev"
 
 # Attach to an existing session by name (never creates a session)
 muxx attach work
@@ -92,12 +97,12 @@ muxx current
 
 ### `connect` vs `attach`
 
-| | `connect` | `attach` |
-|---|---|---|
-| Input | directory path or config alias | tmux session name |
-| Creates session? | yes (if not exists) | no |
-| Runs startup command? | yes (if configured) | no |
-| Use when | starting work in a project | returning to a named session |
+| | `connect <name>` | `connect -c <dir>` | `attach <name>` |
+|---|---|---|---|
+| Input | session name or config alias | directory path | tmux session name |
+| Creates session? | only if config alias | yes (if not exists) | no |
+| Runs startup command? | yes (if config alias) | yes (if configured) | no |
+| Use when | switching to a known session | starting work in a directory | returning to a named session |
 
 ## Config
 
@@ -114,7 +119,7 @@ Optional config file at `~/.config/muxx/config.json`. Defines named project alia
 
 See [`examples/config.json`](examples/config.json) for a fuller example.
 
-- If the target matches a project key, its `cwd` is used as the session directory.
+- If the session name matches a project key, its `cwd` is used as the session directory.
 - `startup` is a shell command sent to the session's first pane on first creation only. Re-connecting to an existing session will not re-run it.
 - `--cmd` on the command line takes precedence over `startup` in the config.
 
