@@ -27,10 +27,12 @@ pub enum Commands {
     /// Connect to or create a session (default when no subcommand given)
     #[command(alias = "c")]
     Connect {
-        /// Directory or config alias to connect to (defaults to current directory)
-        #[arg(value_hint = clap::ValueHint::DirPath)]
-        dir: Option<String>,
-        /// Override the session name
+        /// Existing session name or config alias to connect to
+        session: Option<String>,
+        /// Create a new session from this directory path
+        #[arg(short = 'c', long = "cwd", value_hint = clap::ValueHint::DirPath)]
+        cwd: Option<String>,
+        /// Override the session name (only applies with --cwd)
         #[arg(long)]
         name: Option<String>,
         /// Create the session without attaching to it
@@ -75,14 +77,21 @@ pub fn run() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        None => commands::connect::run(None, None, false, None),
+        None => commands::connect::run(None, None, None, false, None),
         Some(Commands::Attach { session }) => commands::attach::run(&session),
         Some(Commands::Connect {
-            dir,
+            session,
+            cwd,
             name,
             no_attach,
             cmd,
-        }) => commands::connect::run(dir.as_deref(), name.as_deref(), no_attach, cmd.as_deref()),
+        }) => commands::connect::run(
+            session.as_deref(),
+            cwd.as_deref(),
+            name.as_deref(),
+            no_attach,
+            cmd.as_deref(),
+        ),
         Some(Commands::List { json }) => commands::list::run(json),
         Some(Commands::Kill { name, force }) => commands::kill::run(&name, force),
         Some(Commands::Current) => commands::current::run(),
