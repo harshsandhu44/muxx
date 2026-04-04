@@ -52,7 +52,7 @@ cargo install muxx
 | `muxx list [--json]` | `ls` | List all tmux sessions |
 | `muxx kill <name> [--force]` | `k` | Kill a session by name |
 | `muxx current` | `cur` | Print the current session name |
-| `muxx completion <bash\|zsh\|fish>` | | Print shell completion script |
+| `COMPLETE=<bash\|zsh\|fish> muxx` | | Print shell completion script (supports dynamic session names) |
 
 ## Examples
 
@@ -125,28 +125,22 @@ See [`examples/config.json`](examples/config.json) for a fuller example.
 
 ## Shell Completions
 
-muxx generates completion scripts via `clap_complete`.
-
-### bash
-
-Add to `~/.bashrc`:
-
-```sh
-eval "$(muxx completion bash)"
-```
+muxx supports dynamic completions — session names are completed live from the running tmux server.
 
 ### zsh
 
 Add to `~/.zshrc` (after `compinit`):
 
 ```sh
-eval "$(muxx completion zsh)"
+source <(COMPLETE=zsh muxx)
 ```
 
-Or write to a file in your `$fpath` for faster startup (run once):
+### bash
+
+Add to `~/.bashrc`:
 
 ```sh
-muxx completion zsh > "${fpath[1]}/_muxx"
+source <(COMPLETE=bash muxx)
 ```
 
 ### fish
@@ -154,7 +148,7 @@ muxx completion zsh > "${fpath[1]}/_muxx"
 Run once to install:
 
 ```sh
-muxx completion fish > ~/.config/fish/completions/muxx.fish
+COMPLETE=fish muxx > ~/.config/fish/completions/muxx.fish
 ```
 
 ## Shell integration

@@ -1,7 +1,22 @@
 use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::engine::{ArgValueCompleter, CompletionCandidate};
 use clap_complete::Shell;
 
 use crate::commands;
+
+fn complete_sessions(_prefix: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
+    let Ok(out) = std::process::Command::new("tmux")
+        .args(["list-sessions", "-F", "#{session_name}"])
+        .output()
+    else {
+        return vec![];
+    };
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(CompletionCandidate::new)
+        .collect()
+}
 
 #[derive(Parser)]
 #[command(
@@ -21,6 +36,7 @@ pub enum Commands {
     #[command(alias = "a")]
     Attach {
         /// Name of the tmux session to attach to
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
         session: String,
     },
 
@@ -28,6 +44,7 @@ pub enum Commands {
     #[command(alias = "c")]
     Connect {
         /// Existing session name or config alias to connect to
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
         session: Option<String>,
         /// Create a new session from this directory path
         #[arg(short = 'c', long = "cwd", value_hint = clap::ValueHint::DirPath)]
@@ -55,6 +72,7 @@ pub enum Commands {
     #[command(alias = "k")]
     Kill {
         /// Session name to kill
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
         name: String,
         /// Kill even if it is the current session
         #[arg(long)]
@@ -74,6 +92,8 @@ pub enum Commands {
 }
 
 pub fn run() -> anyhow::Result<()> {
+    clap_complete::CompleteEnv::with_factory(Cli::command).complete();
+
     let cli = Cli::parse();
 
     match cli.command {
