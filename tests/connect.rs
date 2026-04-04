@@ -83,7 +83,12 @@ fn connect_reuses_existing_session() {
 fn connect_errors_on_nonexistent_directory() {
     Command::cargo_bin("muxx")
         .unwrap()
-        .args(["connect", "--no-attach", "--cwd", "/tmp/muxx-nonexistent-dir-xyz"])
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            "/tmp/muxx-nonexistent-dir-xyz",
+        ])
         .assert()
         .failure()
         .stderr(contains("does not exist"));
