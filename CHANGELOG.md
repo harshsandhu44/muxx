@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0](https://github.com/harshsandhu44/muxx/compare/v1.3.0...v1.4.0) - 2026-04-04
+
+### Added
+
+- *(connect)* attach to session by name, use --cwd for dir-based creation
+
+### Fixed
+
+- *(config)* eliminate env var mutation in tests to fix parallel test race
+
+### Other
+
+- apply rustfmt to connect test
+- *(connect)* update nonexistent-dir test to use --cwd flag
+- *(connect)* replace dir positional with session name and --cwd flag
+
 ## [1.3.0](https://github.com/harshsandhu44/muxx/compare/v1.2.3...v1.3.0) - 2026-04-01
 
 ### Added
