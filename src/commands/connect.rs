@@ -10,7 +10,8 @@ use crate::core::{
 };
 
 pub fn run(
-    target: Option<&str>,
+    session: Option<&str>,
+    cwd: Option<&str>,
     name_override: Option<&str>,
     no_attach: bool,
     cmd_flag: Option<&str>,
@@ -21,10 +22,43 @@ pub fn run(
     }
 
     let config = load_config();
-    let project = target.and_then(|t| resolve_project(&config, t));
 
-    let cwd_target = project.map(|p| p.cwd.as_str()).or(target);
-    let dir = match resolve_dir(cwd_target) {
+    // --cwd flag: dir-based flow (old positional behavior)
+    if cwd.is_some() {
+        return run_dir_based(cwd, name_override, no_attach, cmd_flag);
+    }
+
+    // Session name or config alias provided
+    if let Some(target) = session {
+        let project = resolve_project(&config, target);
+
+        if let Some(proj) = project {
+            // Config alias: resolve the project's directory
+            let startup = cmd_flag.or(proj.startup.as_deref());
+            return run_dir_based(Some(proj.cwd.as_str()), name_override, no_attach, startup);
+        }
+
+        // Existing tmux session by name
+        if has_session(target) {
+            info(&format!("reused: {target}"));
+            return do_attach(target, no_attach);
+        }
+
+        error(&format!("session not found: {target}"));
+        std::process::exit(1);
+    }
+
+    // No args: fall back to current directory
+    run_dir_based(None, name_override, no_attach, cmd_flag)
+}
+
+fn run_dir_based(
+    dir_target: Option<&str>,
+    name_override: Option<&str>,
+    no_attach: bool,
+    startup_cmd: Option<&str>,
+) -> Result<()> {
+    let dir = match resolve_dir(dir_target) {
         Ok(d) => d,
         Err(e) => {
             error(&e.to_string());
@@ -34,9 +68,6 @@ pub fn run(
 
     let dir_str = dir.to_string_lossy();
     let session_name = resolve_session_name(&dir_str, name_override);
-
-    // --cmd takes precedence over config startup
-    let startup_cmd = cmd_flag.or_else(|| project.and_then(|p| p.startup.as_deref()));
 
     let existed = has_session(&session_name);
 
@@ -53,18 +84,22 @@ pub fn run(
         info(&format!("reused: {session_name}"));
     }
 
+    do_attach(&session_name, no_attach)
+}
+
+fn do_attach(session_name: &str, no_attach: bool) -> Result<()> {
     if no_attach {
         return Ok(());
     }
 
-    state::save_last_session(&session_name);
+    state::save_last_session(session_name);
 
     if is_inside_tmux() {
-        if !switch_client(&session_name) {
+        if !switch_client(session_name) {
             error(&format!("failed to switch to session: {session_name}"));
             std::process::exit(1);
         }
-    } else if !attach_session(&session_name) {
+    } else if !attach_session(session_name) {
         error(&format!("failed to attach to session: {session_name}"));
         std::process::exit(1);
     }
