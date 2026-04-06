@@ -49,7 +49,10 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 - A TUI or interactive session picker
 - A replacement for [sesh](https://github.com/joshmedeski/sesh) or [tmuxinator](https://github.com/tmuxinator/tmuxinator)
 - A pane/window orchestration tool
-- A zoxide or directory-jumping integration
+
+**Planned:**
+
+- [zoxide](https://github.com/ajeetdsouza/zoxide) integration — jump to frecency-ranked directories directly via `muxx`
 
 ---
 
@@ -121,24 +124,24 @@ muxx current
 
 ## Commands
 
-| Command | Alias | Description |
-|---|---|---|
-| `muxx` | | Connect to a session in the current directory |
-| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Attach to an existing session or create one from a directory |
-| `muxx attach <name>` | `a` | Attach or switch to an existing session by name (never creates) |
-| `muxx list [--json]` | `ls` | List all tmux sessions |
-| `muxx kill <name> [--force]` | `k` | Kill a session by name |
-| `muxx current` | `cur` | Print the current session name |
-| `muxx completion <bash\|zsh\|fish>` | | Print shell completion script |
+| Command                                                                        | Alias | Description                                                     |
+| ------------------------------------------------------------------------------ | ----- | --------------------------------------------------------------- |
+| `muxx`                                                                         |       | Connect to a session in the current directory                   |
+| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory    |
+| `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates) |
+| `muxx list [--json]`                                                           | `ls`  | List all tmux sessions                                          |
+| `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                          |
+| `muxx current`                                                                 | `cur` | Print the current session name                                  |
+| `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                   |
 
 ### `connect` vs `attach`
 
-| | `connect <name>` | `connect -c <dir>` | `attach <name>` |
-|---|---|---|---|
-| Input | session name or config alias | directory path | tmux session name |
-| Creates session? | only if config alias | yes (if not exists) | **no** |
-| Runs startup command? | yes (if config alias) | yes (if configured) | no |
-| Use when | switching to a known alias | starting work in a directory | returning to a named session |
+|                       | `connect <name>`             | `connect -c <dir>`           | `attach <name>`              |
+| --------------------- | ---------------------------- | ---------------------------- | ---------------------------- |
+| Input                 | session name or config alias | directory path               | tmux session name            |
+| Creates session?      | only if config alias         | yes (if not exists)          | **no**                       |
+| Runs startup command? | yes (if config alias)        | yes (if configured)          | no                           |
+| Use when              | switching to a known alias   | starting work in a directory | returning to a named session |
 
 ### Full examples
 
@@ -243,6 +246,7 @@ Make sure the `source` / `eval` line is in your shell rc file and your shell was
 
 **Config parse error on startup**
 muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas or invalid JSON. Validate with:
+
 ```sh
 cat ~/.config/muxx/config.json | python3 -m json.tool
 ```
