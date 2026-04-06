@@ -131,6 +131,24 @@ pub fn get_panes_per_session() -> HashMap<String, u32> {
     map
 }
 
+/// Returns a map of session name → session root path.
+/// Uses tab as separator since file paths cannot contain tabs.
+pub fn get_session_paths() -> HashMap<String, String> {
+    let out = run(&["list-sessions", "-F", "#{session_name}\t#{session_path}"]);
+    if out.exit_code != 0 {
+        return HashMap::new();
+    }
+    let mut map = HashMap::new();
+    for line in out.stdout.trim().lines() {
+        if let Some((name, path)) = line.split_once('\t') {
+            if !name.is_empty() {
+                map.insert(name.to_string(), path.to_string());
+            }
+        }
+    }
+    map
+}
+
 pub fn has_session(name: &str) -> bool {
     run(&["has-session", "-t", name]).exit_code == 0
 }
