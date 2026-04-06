@@ -1,6 +1,6 @@
 use assert_cmd::Command;
-use predicates::str::contains;
 use predicates::prelude::*;
+use predicates::str::contains;
 
 #[test]
 fn kill_errors_on_nonexistent_session() {
@@ -76,7 +76,10 @@ fn kill_with_force_flag_kills_session() {
         .map(|s| s.success())
         .unwrap_or(false);
 
-    assert!(!exists, "session '{session}' should be gone after kill --force");
+    assert!(
+        !exists,
+        "session '{session}' should be gone after kill --force"
+    );
 }
 
 #[test]

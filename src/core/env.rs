@@ -132,10 +132,7 @@ mod tests {
     fn resolve_dir_nonexistent_path_errors() {
         let result = resolve_dir(Some("/tmp/muxx-nonexistent-dir-xyz-987654"));
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("does not exist"));
+        assert!(result.unwrap_err().to_string().contains("does not exist"));
     }
 
     #[test]

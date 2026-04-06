@@ -97,9 +97,18 @@ fn list_json_contains_expected_fields() {
         .find(|s| s["name"].as_str() == Some(session))
         .expect("session should appear in JSON output");
 
-    assert!(entry["windows"].is_number(), "windows field should be a number");
-    assert!(entry["attached"].is_boolean(), "attached field should be a boolean");
-    assert!(entry["created"].is_number(), "created field should be a number");
+    assert!(
+        entry["windows"].is_number(),
+        "windows field should be a number"
+    );
+    assert!(
+        entry["attached"].is_boolean(),
+        "attached field should be a boolean"
+    );
+    assert!(
+        entry["created"].is_number(),
+        "created field should be a number"
+    );
 }
 
 #[test]

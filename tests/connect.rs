@@ -137,7 +137,10 @@ fn connect_cwd_flag_creates_session_in_directory() {
         .args(["kill-session", "-t", session])
         .status();
 
-    assert!(exists, "session '{session}' should exist after connect --cwd");
+    assert!(
+        exists,
+        "session '{session}' should exist after connect --cwd"
+    );
 }
 
 #[test]
@@ -148,12 +151,7 @@ fn connect_derives_session_name_from_basename() {
 
     Command::cargo_bin("muxx")
         .unwrap()
-        .args([
-            "connect",
-            "--no-attach",
-            "--cwd",
-            base.to_str().unwrap(),
-        ])
+        .args(["connect", "--no-attach", "--cwd", base.to_str().unwrap()])
         .assert()
         .success()
         .stdout(contains("muxx-basename-derive-test"));
@@ -209,13 +207,7 @@ fn connect_with_config_alias_startup_cmd() {
     Command::cargo_bin("muxx")
         .unwrap()
         .env("MUXX_CONFIG_PATH", config_file.path())
-        .args([
-            "connect",
-            "--no-attach",
-            "--name",
-            session,
-            "startupproj",
-        ])
+        .args(["connect", "--no-attach", "--name", session, "startupproj"])
         .assert()
         .success()
         .stdout(contains("created"));
@@ -229,7 +221,11 @@ fn connect_with_config_alias_startup_cmd() {
 fn connect_unknown_session_name_fails() {
     Command::cargo_bin("muxx")
         .unwrap()
-        .args(["connect", "--no-attach", "muxx-this-session-does-not-exist-xyz"])
+        .args([
+            "connect",
+            "--no-attach",
+            "muxx-this-session-does-not-exist-xyz",
+        ])
         .assert()
         .failure()
         .stderr(contains("session not found"));
