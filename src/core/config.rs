@@ -111,4 +111,64 @@ mod tests {
         let cfg = load_config_from(f.path());
         assert!(resolve_project(&cfg, "foo").is_some());
     }
+
+    #[test]
+    fn parse_config_empty_object_is_valid() {
+        let cfg: MuxxConfig = serde_json::from_str("{}").unwrap();
+        assert!(cfg.projects.is_empty());
+    }
+
+    #[test]
+    fn parse_config_multiple_projects() {
+        let raw = r#"{
+            "projects": {
+                "a": {"cwd": "/a"},
+                "b": {"cwd": "/b", "startup": "npm start"},
+                "c": {"cwd": "/c"}
+            }
+        }"#;
+        let cfg: MuxxConfig = serde_json::from_str(raw).unwrap();
+        assert_eq!(cfg.projects.len(), 3);
+        assert_eq!(
+            resolve_project(&cfg, "b").unwrap().startup.as_deref(),
+            Some("npm start")
+        );
+        assert!(resolve_project(&cfg, "c").unwrap().startup.is_none());
+    }
+
+    #[test]
+    fn parse_config_project_cwd_is_preserved() {
+        let raw = r#"{"projects":{"proj":{"cwd":"/home/user/project"}}}"#;
+        let cfg: MuxxConfig = serde_json::from_str(raw).unwrap();
+        assert_eq!(
+            resolve_project(&cfg, "proj").unwrap().cwd,
+            "/home/user/project"
+        );
+    }
+
+    #[test]
+    fn load_config_from_file_with_env_var_path() {
+        use std::io::Write;
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(
+            f,
+            r#"{{"projects":{{"envtest":{{"cwd":"/tmp/envtest"}}}}}}"#
+        )
+        .unwrap();
+        // load_config_from accepts a path directly — no env var manipulation needed
+        let cfg = load_config_from(f.path());
+        assert!(resolve_project(&cfg, "envtest").is_some());
+        assert_eq!(
+            resolve_project(&cfg, "envtest").unwrap().cwd,
+            "/tmp/envtest"
+        );
+    }
+
+    #[test]
+    fn resolve_project_key_is_case_sensitive() {
+        let cfg = base_config();
+        // "MyApp" vs "myapp" — keys are case-sensitive
+        assert!(resolve_project(&cfg, "MyApp").is_none());
+        assert!(resolve_project(&cfg, "myapp").is_some());
+    }
 }

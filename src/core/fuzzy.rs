@@ -76,4 +76,82 @@ mod tests {
         assert!(m.contains(&"api"));
         assert!(m.contains(&"muxx-app")); // "ap" is also a substring of "muxx-app"
     }
+
+    #[test]
+    fn empty_needle_matches_all_via_substring() {
+        // Empty string is a substring of every string
+        let c = names(&["alpha", "beta", "gamma"]);
+        let m = find_matches("", &c);
+        assert_eq!(m.len(), 3);
+    }
+
+    #[test]
+    fn empty_candidates_returns_empty() {
+        let c: Vec<String> = vec![];
+        assert!(find_matches("foo", &c).is_empty());
+    }
+
+    #[test]
+    fn all_candidates_match_substring() {
+        let c = names(&["foobar", "foo", "prefoo"]);
+        let m = find_matches("foo", &c);
+        assert_eq!(m.len(), 3);
+    }
+
+    #[test]
+    fn subsequence_skips_non_matching_candidate() {
+        // "aa" is a subsequence of "alpha" and "gamma" but not "beta" (only one 'a')
+        let c = names(&["alpha", "beta", "gamma"]);
+        let m = find_matches("aa", &c);
+        assert!(m.contains(&"alpha"));
+        assert!(m.contains(&"gamma"));
+        assert!(!m.contains(&"beta"));
+    }
+
+    #[test]
+    fn case_insensitive_subsequence_fallback() {
+        // "mp" is a subsequence of "MyProject" (case-insensitive)
+        let c = names(&["MyProject"]);
+        let m = find_matches("mp", &c);
+        assert_eq!(m, vec!["MyProject"]);
+    }
+
+    #[test]
+    fn single_char_needle_substring() {
+        let c = names(&["api", "work", "zoo"]);
+        let m = find_matches("a", &c);
+        assert_eq!(m, vec!["api"]);
+    }
+
+    #[test]
+    fn needle_longer_than_candidate_no_match() {
+        let c = names(&["hi"]);
+        assert!(find_matches("hello", &c).is_empty());
+    }
+
+    #[test]
+    fn subsequence_full_word() {
+        // "abc" as subsequence of "aXbXc"
+        let c = names(&["axbxc"]);
+        let m = find_matches("abc", &c);
+        assert_eq!(m, vec!["axbxc"]);
+    }
+
+    #[test]
+    fn subsequence_not_matching_order() {
+        // "ba" is NOT a subsequence of "ab" (b comes after a)
+        // wait, "ab": iterator starts at 'a', needle 'b' → skip 'a', then 'b' found
+        // Actually "ba": needle 'b' → skip 'a' → no match. So empty.
+        let c = names(&["ab"]);
+        // "ba" as subsequence of "ab": look for 'b' first → 'a' no, 'b' yes → found
+        // then look for 'a' → no more chars → false
+        assert!(find_matches("ba", &c).is_empty());
+    }
+
+    #[test]
+    fn hyphenated_session_names_substring_match() {
+        let c = names(&["my-cool-project", "my-other-thing", "unrelated"]);
+        let m = find_matches("cool", &c);
+        assert_eq!(m, vec!["my-cool-project"]);
+    }
 }

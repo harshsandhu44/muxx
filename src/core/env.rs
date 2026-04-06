@@ -97,4 +97,60 @@ mod tests {
             "/tmp/tmux-1000/default,12345,0".to_string()
         )));
     }
+
+    #[test]
+    fn resolve_dir_none_returns_current_directory() {
+        let result = resolve_dir(None);
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(path.is_dir());
+    }
+
+    #[test]
+    fn resolve_dir_empty_string_falls_back_to_cwd() {
+        let result = resolve_dir(Some(""));
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_dir());
+    }
+
+    #[test]
+    fn resolve_dir_whitespace_only_falls_back_to_cwd() {
+        let result = resolve_dir(Some("   "));
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_dir());
+    }
+
+    #[test]
+    fn resolve_dir_valid_directory() {
+        // /tmp always exists
+        let result = resolve_dir(Some("/tmp"));
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_dir());
+    }
+
+    #[test]
+    fn resolve_dir_nonexistent_path_errors() {
+        let result = resolve_dir(Some("/tmp/muxx-nonexistent-dir-xyz-987654"));
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("does not exist"));
+    }
+
+    #[test]
+    fn resolve_dir_file_path_errors() {
+        // /etc/hosts is a file, not a directory — canonicalize succeeds but is_dir() fails
+        let result = resolve_dir(Some("/etc/hosts"));
+        assert!(result.is_err(), "expected error for file path");
+    }
+
+    #[test]
+    fn resolve_dir_tilde_expands_to_home() {
+        let result = resolve_dir(Some("~"));
+        assert!(result.is_ok());
+        let resolved = result.unwrap();
+        let home = dirs::home_dir().unwrap();
+        assert_eq!(resolved, std::fs::canonicalize(home).unwrap());
+    }
 }

@@ -139,4 +139,88 @@ mod tests {
             "my-override"
         );
     }
+
+    #[test]
+    fn numbers_only_preserved() {
+        assert_eq!(sanitize_session_name("12345"), "12345");
+    }
+
+    #[test]
+    fn mixed_alphanumeric_preserved() {
+        assert_eq!(sanitize_session_name("project2024"), "project2024");
+    }
+
+    #[test]
+    fn consecutive_special_chars_collapse_to_single_hyphen() {
+        assert_eq!(sanitize_session_name("foo@@@bar"), "foo-bar");
+    }
+
+    #[test]
+    fn path_with_multiple_consecutive_trailing_slashes() {
+        assert_eq!(sanitize_session_name("/tmp/foo///"), "foo");
+    }
+
+    #[test]
+    fn deep_absolute_path_extracts_basename() {
+        assert_eq!(sanitize_session_name("/a/b/c/d/my-project"), "my-project");
+    }
+
+    #[test]
+    fn leading_special_chars_dropped() {
+        // '@' before any real char: hyphen suppressed because result is empty
+        assert_eq!(sanitize_session_name("@@@foo"), "foo");
+    }
+
+    #[test]
+    fn only_special_chars_produces_empty_string() {
+        // All chars become hyphens, but leading hyphen suppression + trailing strip → ""
+        assert_eq!(sanitize_session_name("@@@"), "");
+    }
+
+    #[test]
+    fn unicode_non_ascii_replaced_with_hyphen() {
+        // 'é' is not ASCII alphanumeric → treated as invalid char → hyphen → stripped trailing
+        assert_eq!(sanitize_session_name("café"), "caf");
+    }
+
+    #[test]
+    fn underscore_preserved_alongside_hyphens() {
+        assert_eq!(sanitize_session_name("foo_bar-baz"), "foo_bar-baz");
+    }
+
+    #[test]
+    fn mixed_case_with_numbers_and_special() {
+        // '.' and '!' become hyphens; "v2.0!" → "v2-0"
+        assert_eq!(sanitize_session_name("My App v2.0!"), "my-app-v2-0");
+    }
+
+    #[test]
+    fn single_char_alphanumeric() {
+        assert_eq!(sanitize_session_name("a"), "a");
+    }
+
+    #[test]
+    fn single_char_special() {
+        assert_eq!(sanitize_session_name("@"), "");
+    }
+
+    #[test]
+    fn path_single_slash() {
+        // "/" splits into ["", ""] — rfind non-empty finds nothing, falls back to input "/"
+        // then "/" is treated as special char → ""
+        assert_eq!(sanitize_session_name("/"), "");
+    }
+
+    #[test]
+    fn resolve_sanitizes_override_with_special_chars() {
+        assert_eq!(
+            resolve_session_name("anything", Some("My App v2!")),
+            "my-app-v2"
+        );
+    }
+
+    #[test]
+    fn resolve_empty_raw_no_override() {
+        assert_eq!(resolve_session_name("", None), "");
+    }
 }

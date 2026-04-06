@@ -139,3 +139,92 @@ pub fn current_session() -> Option<String> {
         Some(name)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_sessions_empty_input() {
+        assert!(parse_sessions("").is_empty());
+    }
+
+    #[test]
+    fn parse_sessions_whitespace_only() {
+        assert!(parse_sessions("   \n  \n").is_empty());
+    }
+
+    #[test]
+    fn parse_sessions_single_detached() {
+        let raw = "mysession:2:0:1700000000\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].name, "mysession");
+        assert_eq!(sessions[0].windows, 2);
+        assert!(!sessions[0].attached);
+        assert_eq!(sessions[0].created, 1700000000);
+    }
+
+    #[test]
+    fn parse_sessions_single_attached() {
+        let raw = "work:1:1:1700000001\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 1);
+        assert!(sessions[0].attached);
+        assert_eq!(sessions[0].name, "work");
+        assert_eq!(sessions[0].windows, 1);
+    }
+
+    #[test]
+    fn parse_sessions_name_with_colon() {
+        // rsplitn from the right: name field absorbs embedded colons
+        let raw = "my:session:3:0:1700000002\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].name, "my:session");
+        assert_eq!(sessions[0].windows, 3);
+        assert!(!sessions[0].attached);
+        assert_eq!(sessions[0].created, 1700000002);
+    }
+
+    #[test]
+    fn parse_sessions_multiple() {
+        let raw = "alpha:1:0:100\nbeta:2:1:200\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 2);
+        assert_eq!(sessions[0].name, "alpha");
+        assert!(!sessions[0].attached);
+        assert_eq!(sessions[1].name, "beta");
+        assert!(sessions[1].attached);
+    }
+
+    #[test]
+    fn parse_sessions_skips_blank_lines() {
+        let raw = "\nalpha:1:0:100\n\nbeta:2:1:200\n\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 2);
+    }
+
+    #[test]
+    fn parse_sessions_skips_malformed_line() {
+        let raw = "bad-line\ngood:1:0:100\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].name, "good");
+    }
+
+    #[test]
+    fn parse_sessions_windows_count_preserved() {
+        let raw = "multi:5:0:9999\n";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions[0].windows, 5);
+    }
+
+    #[test]
+    fn parse_sessions_no_trailing_newline() {
+        let raw = "solo:1:0:42";
+        let sessions = parse_sessions(raw);
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].name, "solo");
+    }
+}

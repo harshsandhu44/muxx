@@ -97,3 +97,81 @@ fn attach_dash_without_prior_session_fails() {
         "expected 'no last session', got: {stderr}"
     );
 }
+
+// --- ambiguous fuzzy matching ---
+
+#[test]
+fn fuzzy_ambiguous_match_reports_error_and_candidates() {
+    let session_a = "muxx-ambig-test-session-aaa";
+    let session_b = "muxx-ambig-test-session-bbb";
+
+    // Create two sessions that share the prefix "muxx-ambig-test-session"
+    std::process::Command::new("tmux")
+        .args(["new-session", "-d", "-s", session_a])
+        .status()
+        .unwrap();
+    std::process::Command::new("tmux")
+        .args(["new-session", "-d", "-s", session_b])
+        .status()
+        .unwrap();
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["attach", "muxx-ambig-test-session"])
+        .env_remove("TMUX")
+        .output()
+        .unwrap();
+
+    std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session_a])
+        .status()
+        .ok();
+    std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session_b])
+        .status()
+        .ok();
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("ambiguous"),
+        "expected 'ambiguous' in stderr, got: {stderr}"
+    );
+}
+
+// --- error message quality ---
+
+#[test]
+fn attach_nonexistent_stderr_contains_session_name() {
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["attach", "muxx-specific-nonexistent-name"])
+        .env_remove("TMUX")
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("muxx-specific-nonexistent-name"),
+        "error message should include the session name, got: {stderr}"
+    );
+}
+
+#[test]
+fn attach_nonexistent_hints_list_command() {
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["attach", "muxx-no-such-session-hint-test"])
+        .env_remove("TMUX")
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // The hint ("muxx list") is written to stdout via hint()
+    assert!(
+        stdout.contains("list"),
+        "expected a hint mentioning 'list', got stdout: {stdout}"
+    );
+}
