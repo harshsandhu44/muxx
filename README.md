@@ -129,7 +129,7 @@ muxx current
 | `muxx list [--json]` | `ls` | List all tmux sessions |
 | `muxx kill <name> [--force]` | `k` | Kill a session by name |
 | `muxx current` | `cur` | Print the current session name |
-| `COMPLETE=<bash\|zsh\|fish> muxx` | | Print shell completion script |
+| `muxx completion <bash\|zsh\|fish>` | | Print shell completion script |
 
 ### `connect` vs `attach`
 
@@ -199,7 +199,7 @@ muxx supports dynamic completions — session names are completed live from the 
 Add to `~/.zshrc` (after `compinit`):
 
 ```sh
-source <(COMPLETE=zsh muxx)
+eval "$(muxx completion zsh)"
 ```
 
 ### bash
@@ -207,7 +207,7 @@ source <(COMPLETE=zsh muxx)
 Add to `~/.bashrc`:
 
 ```sh
-source <(COMPLETE=bash muxx)
+eval "$(muxx completion bash)"
 ```
 
 ### fish
@@ -215,7 +215,7 @@ source <(COMPLETE=bash muxx)
 Run once to install:
 
 ```sh
-COMPLETE=fish muxx > ~/.config/fish/completions/muxx.fish
+muxx completion fish > ~/.config/fish/completions/muxx.fish
 ```
 
 ---
@@ -224,8 +224,10 @@ COMPLETE=fish muxx > ~/.config/fish/completions/muxx.fish
 
 The [`examples/`](examples/) directory has ready-to-use shell snippets:
 
-- [`zsh-integration.zsh`](examples/zsh-integration.zsh) — `mx` wrapper and an optional `mxp` interactive picker (requires `fzf`)
-- [`tmux-status.conf`](examples/tmux-status.conf) — show the current session name in the tmux status bar
+- [`zsh-integration.zsh`](examples/zsh-integration.zsh) — `mx` (connect), `mxp` (fzf session picker), `mxk` (fzf session killer), completion setup
+- [`bash-integration.bash`](examples/bash-integration.bash) — same helpers for bash
+- [`fish-integration.fish`](examples/fish-integration.fish) — fish-native `mx` and `mxk` helpers
+- [`tmux-status.conf`](examples/tmux-status.conf) — show the session name in the status bar; keybinds for in-tmux session switching
 
 All muxx output is plain text or `--json`, so it composes naturally with `fzf`, `jq`, and other tools.
 
