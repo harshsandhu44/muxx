@@ -1,9 +1,11 @@
 use assert_cmd::Command;
 use predicates::str::contains;
+use std::process::Stdio;
 
 fn tmux(args: &[&str]) -> bool {
     std::process::Command::new("tmux")
         .args(args)
+        .stderr(Stdio::null())
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
@@ -12,6 +14,7 @@ fn tmux(args: &[&str]) -> bool {
 fn kill(session: &str) {
     let _ = std::process::Command::new("tmux")
         .args(["kill-session", "-t", session])
+        .stderr(Stdio::null())
         .status();
 }
 

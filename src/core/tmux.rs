@@ -25,7 +25,8 @@ fn run(args: &[&str]) -> Output {
 
     match result {
         Ok(out) => Output {
-            stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+            stdout: String::from_utf8(out.stdout)
+                .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()),
             exit_code: out.status.code().unwrap_or(1),
         },
         Err(_) => Output {

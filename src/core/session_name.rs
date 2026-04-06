@@ -35,9 +35,7 @@ pub fn sanitize_session_name(input: &str) -> String {
     }
 
     // Strip trailing hyphen
-    let result = result.trim_end_matches('-').to_string();
-
-    result
+    result.trim_end_matches('-').to_string()
 }
 
 /// Resolve the effective session name, letting an explicit override win.

@@ -26,6 +26,18 @@ pub fn save_last_session(name: &str) {
     }
 }
 
+/// Updates the last session file if the current value matches `old` (best-effort).
+/// Resolves the state path once, avoiding redundant `create_dir_all` calls.
+pub fn update_last_session_if(old: &str, new: &str) {
+    if let Some(path) = state_file() {
+        if let Ok(current) = std::fs::read_to_string(&path) {
+            if current.trim() == old {
+                let _ = std::fs::write(path, new);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

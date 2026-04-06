@@ -30,9 +30,7 @@ pub fn run(from: &str, to: &str) -> Result<()> {
         std::process::exit(1);
     }
 
-    if state::load_last_session().as_deref() == Some(from) {
-        state::save_last_session(&to);
-    }
+    state::update_last_session_if(from, &to);
 
     success(&format!("renamed: {from} -> {to}"));
     Ok(())
