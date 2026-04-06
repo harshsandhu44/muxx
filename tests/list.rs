@@ -109,6 +109,10 @@ fn list_json_contains_expected_fields() {
         entry["created"].is_number(),
         "created field should be a number"
     );
+    assert!(
+        entry["last_attached"].is_number(),
+        "last_attached field should be a number"
+    );
 }
 
 #[test]

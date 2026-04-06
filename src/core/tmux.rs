@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
 use serde::Serialize;
@@ -9,6 +10,8 @@ pub struct TmuxSession {
     pub attached: bool,
     /// Unix timestamp (seconds since epoch)
     pub created: u64,
+    /// Unix timestamp of last attach; 0 = never attached
+    pub last_attached: u64,
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +67,7 @@ pub fn list_sessions() -> Vec<TmuxSession> {
     let out = run(&[
         "list-sessions",
         "-F",
-        "#{session_name}:#{session_windows}:#{session_attached}:#{session_created}",
+        "#{session_name}:#{session_windows}:#{session_attached}:#{session_created}:#{session_last_attached}",
     ]);
     if out.exit_code != 0 {
         return Vec::new();
@@ -77,9 +80,11 @@ fn parse_sessions(raw: &str) -> Vec<TmuxSession> {
         .lines()
         .filter(|l| !l.is_empty())
         .filter_map(|line| {
-            // Split from the right: the last 3 fields are always numeric.
+            // Split from the right: the last 4 fields are always numeric.
             // This handles session names that contain colons.
-            let mut parts = line.rsplitn(4, ':');
+            let mut parts = line.rsplitn(5, ':');
+            // session_last_attached is empty for sessions that were never attached
+            let last_attached: u64 = parts.next()?.parse().unwrap_or(0);
             let created: u64 = parts.next()?.parse().ok()?;
             let attached = parts.next()? == "1";
             let windows: u32 = parts.next()?.parse().ok()?;
@@ -89,9 +94,59 @@ fn parse_sessions(raw: &str) -> Vec<TmuxSession> {
                 windows,
                 attached,
                 created,
+                last_attached,
             })
         })
         .collect()
+}
+
+/// Returns a map of session name → total pane count across all windows.
+pub fn get_panes_per_session() -> HashMap<String, u32> {
+    let out = run(&[
+        "list-windows",
+        "-a",
+        "-F",
+        "#{session_name}:#{window_panes}",
+    ]);
+    if out.exit_code != 0 {
+        return HashMap::new();
+    }
+    let mut map: HashMap<String, u32> = HashMap::new();
+    for line in out.stdout.trim().lines() {
+        if line.is_empty() {
+            continue;
+        }
+        // rsplitn(2) from the right: last field is pane count (numeric)
+        let mut parts = line.rsplitn(2, ':');
+        let panes: u32 = match parts.next().and_then(|p| p.parse().ok()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let session_name = match parts.next() {
+            Some(n) => n.to_string(),
+            None => continue,
+        };
+        *map.entry(session_name).or_insert(0) += panes;
+    }
+    map
+}
+
+/// Returns a map of session name → session root path.
+/// Uses tab as separator since file paths cannot contain tabs.
+pub fn get_session_paths() -> HashMap<String, String> {
+    let out = run(&["list-sessions", "-F", "#{session_name}\t#{session_path}"]);
+    if out.exit_code != 0 {
+        return HashMap::new();
+    }
+    let mut map = HashMap::new();
+    for line in out.stdout.trim().lines() {
+        if let Some((name, path)) = line.split_once('\t') {
+            if !name.is_empty() {
+                map.insert(name.to_string(), path.to_string());
+            }
+        }
+    }
+    map
 }
 
 pub fn has_session(name: &str) -> bool {
@@ -161,40 +216,43 @@ mod tests {
 
     #[test]
     fn parse_sessions_single_detached() {
-        let raw = "mysession:2:0:1700000000\n";
+        let raw = "mysession:2:0:1700000000:1700000005\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].name, "mysession");
         assert_eq!(sessions[0].windows, 2);
         assert!(!sessions[0].attached);
         assert_eq!(sessions[0].created, 1700000000);
+        assert_eq!(sessions[0].last_attached, 1700000005);
     }
 
     #[test]
     fn parse_sessions_single_attached() {
-        let raw = "work:1:1:1700000001\n";
+        let raw = "work:1:1:1700000001:1700000010\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 1);
         assert!(sessions[0].attached);
         assert_eq!(sessions[0].name, "work");
         assert_eq!(sessions[0].windows, 1);
+        assert_eq!(sessions[0].last_attached, 1700000010);
     }
 
     #[test]
     fn parse_sessions_name_with_colon() {
         // rsplitn from the right: name field absorbs embedded colons
-        let raw = "my:session:3:0:1700000002\n";
+        let raw = "my:session:3:0:1700000002:1700000003\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].name, "my:session");
         assert_eq!(sessions[0].windows, 3);
         assert!(!sessions[0].attached);
         assert_eq!(sessions[0].created, 1700000002);
+        assert_eq!(sessions[0].last_attached, 1700000003);
     }
 
     #[test]
     fn parse_sessions_multiple() {
-        let raw = "alpha:1:0:100\nbeta:2:1:200\n";
+        let raw = "alpha:1:0:100:50\nbeta:2:1:200:150\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 2);
         assert_eq!(sessions[0].name, "alpha");
@@ -205,14 +263,14 @@ mod tests {
 
     #[test]
     fn parse_sessions_skips_blank_lines() {
-        let raw = "\nalpha:1:0:100\n\nbeta:2:1:200\n\n";
+        let raw = "\nalpha:1:0:100:50\n\nbeta:2:1:200:150\n\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 2);
     }
 
     #[test]
     fn parse_sessions_skips_malformed_line() {
-        let raw = "bad-line\ngood:1:0:100\n";
+        let raw = "bad-line\ngood:1:0:100:50\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].name, "good");
@@ -220,16 +278,17 @@ mod tests {
 
     #[test]
     fn parse_sessions_windows_count_preserved() {
-        let raw = "multi:5:0:9999\n";
+        let raw = "multi:5:0:9999:8888\n";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions[0].windows, 5);
     }
 
     #[test]
     fn parse_sessions_no_trailing_newline() {
-        let raw = "solo:1:0:42";
+        let raw = "solo:1:0:42:0";
         let sessions = parse_sessions(raw);
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].name, "solo");
+        assert_eq!(sessions[0].last_attached, 0);
     }
 }

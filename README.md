@@ -110,8 +110,11 @@ muxx connect -c ~/Code/myapp --name work
 # Run a command when the session is first created
 muxx connect -c ~/Code/myapp --cmd "npm run dev"
 
-# List all sessions
+# List all sessions (table view with windows, panes, last seen, CWD, startup)
 muxx list
+
+# Rename a session
+muxx rename myapp work
 
 # Kill a session
 muxx kill myapp
@@ -129,8 +132,9 @@ muxx current
 | `muxx`                                                                         |       | Connect to a session in the current directory                   |
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory    |
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates) |
-| `muxx list [--json]`                                                           | `ls`  | List all tmux sessions                                          |
+| `muxx list [--json]`                                                           | `ls`  | List sessions with windows, panes, last seen, CWD, and startup  |
 | `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                          |
+| `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session                                      |
 | `muxx current`                                                                 | `cur` | Print the current session name                                  |
 | `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                   |
 
@@ -157,11 +161,15 @@ muxx a work               # alias
 # Create a session without attaching (useful in scripts)
 muxx connect -c ~/Code/myapp --no-attach
 
-# List sessions as JSON (for scripting)
+# List sessions as JSON (includes name, windows, attached, created, last_attached)
 muxx list --json
 
 # Force-kill the current session
 muxx kill mysession --force
+
+# Rename a session
+muxx rename old-name new-name
+muxx rn old-name new-name   # alias
 ```
 
 ---
