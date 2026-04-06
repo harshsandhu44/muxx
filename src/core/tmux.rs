@@ -127,6 +127,10 @@ pub fn kill_session(name: &str) -> bool {
     run(&["kill-session", "-t", name]).exit_code == 0
 }
 
+pub fn rename_session(old: &str, new: &str) -> bool {
+    run(&["rename-session", "-t", old, new]).exit_code == 0
+}
+
 pub fn current_session() -> Option<String> {
     let out = run(&["display-message", "-p", "#{session_name}"]);
     if out.exit_code != 0 {
