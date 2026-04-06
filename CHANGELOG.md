@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1](https://github.com/harshsandhu44/muxx/compare/v1.5.0...v1.5.1) - 2026-04-06
+
+### Other
+
+- add planned section
+- expand examples and fix completion commands in README
+- update dirs package
+- add extensive unit and integration tests across all modules
+- enhance tests in the code
+- overhaul project documentation for open source contributors
+
 ## [1.5.0](https://github.com/harshsandhu44/muxx/compare/v1.4.0...v1.5.0) - 2026-04-04
 
 ### Added
