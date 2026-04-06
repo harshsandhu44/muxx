@@ -79,6 +79,16 @@ pub enum Commands {
         force: bool,
     },
 
+    /// Rename an existing tmux session
+    #[command(alias = "rn")]
+    Rename {
+        /// Current session name
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        from: String,
+        /// New session name
+        to: String,
+    },
+
     /// Print the current session name
     #[command(alias = "cur")]
     Current,
@@ -114,6 +124,7 @@ pub fn run() -> anyhow::Result<()> {
         ),
         Some(Commands::List { json }) => commands::list::run(json),
         Some(Commands::Kill { name, force }) => commands::kill::run(&name, force),
+        Some(Commands::Rename { from, to }) => commands::rename::run(&from, &to),
         Some(Commands::Current) => commands::current::run(),
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())

@@ -25,7 +25,8 @@ fn run(args: &[&str]) -> Output {
 
     match result {
         Ok(out) => Output {
-            stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+            stdout: String::from_utf8(out.stdout)
+                .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()),
             exit_code: out.status.code().unwrap_or(1),
         },
         Err(_) => Output {
@@ -125,6 +126,10 @@ pub fn send_keys(session: &str, cmd: &str) -> bool {
 
 pub fn kill_session(name: &str) -> bool {
     run(&["kill-session", "-t", name]).exit_code == 0
+}
+
+pub fn rename_session(old: &str, new: &str) -> bool {
+    run(&["rename-session", "-t", old, new]).exit_code == 0
 }
 
 pub fn current_session() -> Option<String> {

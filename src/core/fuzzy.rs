@@ -3,13 +3,20 @@
 /// Two-pass strategy:
 ///   1. Case-insensitive substring — "wo" matches "work"
 ///   2. Case-insensitive subsequence — "wrk" matches "work" (if pass 1 is empty)
-pub fn find_matches<'a>(needle: &str, candidates: &'a [String]) -> Vec<&'a str> {
+pub fn find_matches<'a, S: AsRef<str>>(needle: &str, candidates: &'a [S]) -> Vec<&'a str> {
     let needle_lc = needle.to_lowercase();
+
+    // Pre-compute lowercased candidates once for both passes.
+    let lowered: Vec<String> = candidates
+        .iter()
+        .map(|s| s.as_ref().to_lowercase())
+        .collect();
 
     let subs: Vec<&str> = candidates
         .iter()
-        .filter(|s| s.to_lowercase().contains(&needle_lc))
-        .map(String::as_str)
+        .zip(lowered.iter())
+        .filter(|(_, lc)| lc.contains(&needle_lc))
+        .map(|(s, _)| s.as_ref())
         .collect();
 
     if !subs.is_empty() {
@@ -18,8 +25,9 @@ pub fn find_matches<'a>(needle: &str, candidates: &'a [String]) -> Vec<&'a str> 
 
     candidates
         .iter()
-        .filter(|s| is_subsequence(&needle_lc, &s.to_lowercase()))
-        .map(String::as_str)
+        .zip(lowered.iter())
+        .filter(|(_, lc)| is_subsequence(&needle_lc, lc))
+        .map(|(s, _)| s.as_ref())
         .collect()
 }
 

@@ -45,6 +45,7 @@ fn kill_removes_existing_session() {
     // Verify it's gone
     let exists = std::process::Command::new("tmux")
         .args(["has-session", "-t", session])
+        .stderr(std::process::Stdio::null())
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
@@ -72,6 +73,7 @@ fn kill_with_force_flag_kills_session() {
 
     let exists = std::process::Command::new("tmux")
         .args(["has-session", "-t", session])
+        .stderr(std::process::Stdio::null())
         .status()
         .map(|s| s.success())
         .unwrap_or(false);

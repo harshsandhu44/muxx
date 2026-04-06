@@ -17,7 +17,7 @@ pub fn run(session: &str) -> Result<()> {
 
     // Exact match failed — try fuzzy matching.
     let sessions = tmux::list_sessions();
-    let names: Vec<String> = sessions.iter().map(|s| s.name.clone()).collect();
+    let names: Vec<&str> = sessions.iter().map(|s| s.name.as_str()).collect();
     let matches = fuzzy::find_matches(session, &names);
 
     match matches.len() {
