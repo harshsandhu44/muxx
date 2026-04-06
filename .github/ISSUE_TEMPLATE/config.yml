@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/harshsandhu44/muxx/discussions
+    about: Ask questions and discuss ideas in Discussions rather than Issues.
+  - name: Security vulnerability
+    url: https://github.com/harshsandhu44/muxx/security/advisories/new
+    about: Report security issues privately via GitHub Security Advisories.

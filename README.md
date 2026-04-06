@@ -1,129 +1,196 @@
 # muxx
 
 [![crates.io](https://img.shields.io/crates/v/muxx.svg)](https://crates.io/crates/muxx)
+[![Downloads](https://img.shields.io/crates/d/muxx.svg)](https://crates.io/crates/muxx)
 [![CI](https://github.com/harshsandhu44/muxx/actions/workflows/release.yml/badge.svg)](https://github.com/harshsandhu44/muxx/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Minimal tmux session automation CLI.
+**Minimal tmux session automation CLI.**
 
-## What it is
+Jump into any project in one command. muxx creates a tmux session from a directory (or a named alias in your config), attaches to it if it's already running, and gets out of your way.
 
-A focused CLI for managing tmux sessions from the terminal. No TUI, no plugins, no telemetry — just a clean interface over `tmux` commands.
+```sh
+# Go to a project — creates the session if it doesn't exist, attaches if it does
+muxx connect ~/Code/myapp
 
-## Design principles
+# Or just run `muxx` from inside the project directory
+cd ~/Code/myapp && muxx
+```
 
-- **Minimal by default.** muxx does one thing: manage tmux sessions.
-- **No surprises.** Every action maps directly to a tmux operation.
-- **Config is optional.** Works without any config file; config only adds named aliases.
-- **Composable.** Plain text and JSON output so it fits into scripts and other tools.
+---
 
-## Non-goals
+## Contents
 
-muxx does not aim to provide:
+- [Why muxx](#why-muxx)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Commands](#commands)
+- [Config](#config)
+- [Shell completions](#shell-completions)
+- [Shell integration](#shell-integration)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+
+---
+
+## Why muxx
+
+Most tmux session managers grow into full workspace orchestrators — TUIs, pane layouts, plugins, zoxide hooks. muxx doesn't. It does one thing: get you into a session, fast, from anywhere in your shell.
+
+**Design principles:**
+
+- **Minimal by default.** muxx manages sessions. Not windows, not panes, not your entire workspace.
+- **No surprises.** Every action maps directly to a tmux operation you could run yourself.
+- **Config is optional.** Works out of the box with no config file; config only adds named project aliases.
+- **Composable.** Plain text and `--json` output so it fits into scripts and shell functions.
+
+**Not trying to be:**
 
 - A TUI or interactive session picker
-- Pane and window orchestration
-- zoxide or directory-jumping integration
-- A plugin or extension system
-- Telemetry or usage analytics
-- A feature-complete replacement for sesh or tmuxinator
+- A replacement for [sesh](https://github.com/joshmedeski/sesh) or [tmuxinator](https://github.com/tmuxinator/tmuxinator)
+- A pane/window orchestration tool
+- A zoxide or directory-jumping integration
 
-## Requirements
-
-- Rust stable (for building from source)
-- tmux installed on the system
+---
 
 ## Installation
+
+### From crates.io (recommended)
 
 ```sh
 cargo install muxx
 ```
 
-### Distribution
+Requires Rust stable. On macOS, get Rust via [rustup](https://rustup.rs).
 
-`cargo install` is the only first-class install method right now. Pre-built binaries are attached to each [GitHub release](https://github.com/harshsandhu44/muxx/releases) but there is no install script or Homebrew tap yet. A Homebrew tap is planned for a future release.
+### Pre-built binaries
+
+Pre-built binaries for Linux and macOS are attached to each [GitHub release](https://github.com/harshsandhu44/muxx/releases). Download, make executable, and place in your `PATH`.
+
+```sh
+# Example for macOS arm64
+curl -L https://github.com/harshsandhu44/muxx/releases/latest/download/muxx-aarch64-apple-darwin \
+  -o /usr/local/bin/muxx && chmod +x /usr/local/bin/muxx
+```
+
+> A Homebrew tap is planned for a future release.
+
+### From source
+
+```sh
+git clone https://github.com/harshsandhu44/muxx
+cd muxx
+cargo install --path .
+```
+
+### Verify
+
+```sh
+muxx --version
+```
+
+---
+
+## Quick start
+
+```sh
+# Connect to the current directory (create session if needed, attach if exists)
+cd ~/Code/myapp
+muxx
+
+# Connect to any directory
+muxx connect -c ~/Code/myapp
+
+# Give the session a custom name
+muxx connect -c ~/Code/myapp --name work
+
+# Run a command when the session is first created
+muxx connect -c ~/Code/myapp --cmd "npm run dev"
+
+# List all sessions
+muxx list
+
+# Kill a session
+muxx kill myapp
+
+# Print the current session name (useful in scripts)
+muxx current
+```
+
+---
 
 ## Commands
 
 | Command | Alias | Description |
 |---|---|---|
 | `muxx` | | Connect to a session in the current directory |
-| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Attach to an existing session by name, or create one from a directory |
-| `muxx attach <name>` | `a` | Attach or switch to an existing session by name |
+| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c` | Attach to an existing session or create one from a directory |
+| `muxx attach <name>` | `a` | Attach or switch to an existing session by name (never creates) |
 | `muxx list [--json]` | `ls` | List all tmux sessions |
 | `muxx kill <name> [--force]` | `k` | Kill a session by name |
 | `muxx current` | `cur` | Print the current session name |
-| `COMPLETE=<bash\|zsh\|fish> muxx` | | Print shell completion script (supports dynamic session names) |
-
-## Examples
-
-```sh
-# Connect to session in current directory (creates if it doesn't exist)
-muxx
-
-# Attach to an existing session by name
-muxx connect dotfiles
-muxx c dotfiles           # alias
-
-# Connect using a config alias
-muxx connect myapp
-
-# Create a session from a specific directory
-muxx connect --cwd ~/Code/myapp
-muxx connect -c ~/Code/myapp    # short flag
-
-# Create a session without attaching
-muxx connect -c ~/Code/myapp --no-attach
-
-# Override the session name (only with --cwd)
-muxx connect -c ~/Code/myapp --name work
-
-# Run a command when the session is first created (only with --cwd or config alias)
-muxx connect -c ~/Code/myapp --cmd "npm run dev"
-
-# Attach to an existing session by name (never creates a session)
-muxx attach work
-muxx a work               # alias
-
-# List sessions
-muxx list
-muxx list --json
-
-# Kill a session
-muxx kill myapp
-
-# Print current session name
-muxx current
-```
+| `COMPLETE=<bash\|zsh\|fish> muxx` | | Print shell completion script |
 
 ### `connect` vs `attach`
 
 | | `connect <name>` | `connect -c <dir>` | `attach <name>` |
 |---|---|---|---|
 | Input | session name or config alias | directory path | tmux session name |
-| Creates session? | only if config alias | yes (if not exists) | no |
+| Creates session? | only if config alias | yes (if not exists) | **no** |
 | Runs startup command? | yes (if config alias) | yes (if configured) | no |
-| Use when | switching to a known session | starting work in a directory | returning to a named session |
+| Use when | switching to a known alias | starting work in a directory | returning to a named session |
+
+### Full examples
+
+```sh
+# Connect to a config alias (resolves to its configured cwd + startup command)
+muxx connect myapp
+muxx c myapp              # alias
+
+# Attach to a running session by name (errors if it doesn't exist)
+muxx attach work
+muxx a work               # alias
+
+# Create a session without attaching (useful in scripts)
+muxx connect -c ~/Code/myapp --no-attach
+
+# List sessions as JSON (for scripting)
+muxx list --json
+
+# Force-kill the current session
+muxx kill mysession --force
+```
+
+---
 
 ## Config
 
-Optional config file at `~/.config/muxx/config.json`. Defines named project aliases so you can run `muxx connect <name>` without typing the full path.
+Optional. Place at `~/.config/muxx/config.json`.
+
+Defines named project aliases so you can run `muxx connect <name>` without typing the full path.
 
 ```json
 {
   "projects": {
     "myapp": { "cwd": "~/Code/myapp" },
-    "api": { "cwd": "~/Code/api", "startup": "cargo run" }
+    "api": { "cwd": "~/Code/api", "startup": "cargo run" },
+    "frontend": { "cwd": "~/Code/frontend", "startup": "npm run dev" }
   }
 }
 ```
 
 See [`examples/config.json`](examples/config.json) for a fuller example.
 
-- If the session name matches a project key, its `cwd` is used as the session directory.
-- `startup` is a shell command sent to the session's first pane on first creation only. Re-connecting to an existing session will not re-run it.
-- `--cmd` on the command line takes precedence over `startup` in the config.
+**How it works:**
 
-## Shell Completions
+- If the session name matches a project key, its `cwd` is used as the session directory.
+- `startup` is a shell command sent to the session's first pane on **first creation only**. Re-connecting to an existing session will not re-run it.
+- `--cmd` on the command line takes precedence over `startup` in the config.
+- The config path can be overridden with the `MUXX_CONFIG_PATH` environment variable.
+
+---
+
+## Shell completions
 
 muxx supports dynamic completions — session names are completed live from the running tmux server.
 
@@ -151,82 +218,51 @@ Run once to install:
 COMPLETE=fish muxx > ~/.config/fish/completions/muxx.fish
 ```
 
+---
+
 ## Shell integration
 
-muxx is designed to fit naturally into shell workflows. All output is plain text or `--json`, so it composes with standard tools.
+The [`examples/`](examples/) directory has ready-to-use shell snippets:
 
-The [`examples/`](examples/) directory has ready-to-use snippets:
+- [`zsh-integration.zsh`](examples/zsh-integration.zsh) — `mx` wrapper and an optional `mxp` interactive picker (requires `fzf`)
+- [`tmux-status.conf`](examples/tmux-status.conf) — show the current session name in the tmux status bar
 
-- [`zsh-integration.zsh`](examples/zsh-integration.zsh) — a short `mx` wrapper function and an optional `mxp` interactive picker (requires `fzf`)
-- [`tmux-status.conf`](examples/tmux-status.conf) — how to show the current session name in the tmux status bar
+All muxx output is plain text or `--json`, so it composes naturally with `fzf`, `jq`, and other tools.
+
+---
 
 ## Troubleshooting
 
 **`tmux: command not found`**
-muxx requires tmux to be installed and available in `PATH`. Install it via your system package manager (e.g. `brew install tmux`, `apt install tmux`).
+muxx requires tmux in `PATH`. Install via your package manager (`brew install tmux`, `apt install tmux`, etc.).
 
 **Shell completions not working**
-Make sure the `eval "$(muxx completion <shell>)"` line is in your shell rc file and that your shell was restarted (or the file was sourced). For zsh, the eval must come after `compinit`.
+Make sure the `source` / `eval` line is in your shell rc file and your shell was restarted (or the file was sourced). For zsh, the line must come after `compinit`.
 
 **Config parse error on startup**
-muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas, unquoted strings, or invalid JSON. Run `cat ~/.config/muxx/config.json | python3 -m json.tool` to validate.
+muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas or invalid JSON. Validate with:
+```sh
+cat ~/.config/muxx/config.json | python3 -m json.tool
+```
 
 **Behavior differs inside vs outside tmux**
-When run inside an existing tmux session, muxx uses `switch-client` to move to the target session. When run outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching to it at all.
+Inside an existing session, muxx uses `switch-client`. Outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching.
 
 **Startup command did not run / ran unexpectedly**
-`startup` in config and `--cmd` on the CLI are only sent to the session's first pane on *new session creation*. Re-connecting to an existing session will not re-run it. To force a re-run, kill the session first (`muxx kill <name>`) and reconnect.
+`startup` and `--cmd` only fire on **new session creation**. To force a re-run, kill the session first (`muxx kill <name>`) and reconnect.
+
+---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and commit conventions. For a quick orientation to the codebase, see [docs/architecture.md](docs/architecture.md).
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and commit conventions.
 
-## Development
+For a codebase overview, see [docs/architecture.md](docs/architecture.md).
 
-```sh
-# Build and run
-cargo run -- list
-cargo run -- --help
+To report a security issue, see [SECURITY.md](SECURITY.md).
 
-# Run tests
-cargo test
+---
 
-# Lint and format
-cargo fmt
-cargo clippy -- -D warnings
+## License
 
-# Build release binary
-cargo build --release
-./target/release/muxx --help
-```
-
-## Releases
-
-Releases are fully automated via [release-plz](https://release-plz.dev) on every push to `main`.
-
-### How it works
-
-1. Every push to `main` runs format check, clippy, tests, and a release build.
-2. If all pass, release-plz analyzes commits since the last tag.
-3. If releasable commits exist, it:
-   - Opens a release PR that bumps the version in `Cargo.toml` and generates a changelog
-   - When that PR is merged, publishes the crate to [crates.io](https://crates.io) and creates a GitHub release
-
-### Commit convention
-
-This project uses [Conventional Commits](https://www.conventionalcommits.org/).
-
-| Commit type | Release type |
-|---|---|
-| `fix:` | patch (e.g. `1.2.2` → `1.2.3`) |
-| `feat:` | minor (e.g. `1.2.2` → `1.3.0`) |
-| `BREAKING CHANGE:` in footer | major (e.g. `1.2.2` → `2.0.0`) |
-
-Types like `chore:`, `docs:`, `test:`, `refactor:` do not trigger a release.
-
-### Required secrets
-
-| Secret | Description |
-|---|---|
-| `CARGO_REGISTRY_TOKEN` | crates.io API token — create at crates.io → Account Settings → API Tokens |
-| `GITHUB_TOKEN` | Automatically provided by GitHub Actions — no setup needed |
+[MIT](LICENSE)
