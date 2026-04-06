@@ -7,7 +7,10 @@ pub fn find_matches<'a, S: AsRef<str>>(needle: &str, candidates: &'a [S]) -> Vec
     let needle_lc = needle.to_lowercase();
 
     // Pre-compute lowercased candidates once for both passes.
-    let lowered: Vec<String> = candidates.iter().map(|s| s.as_ref().to_lowercase()).collect();
+    let lowered: Vec<String> = candidates
+        .iter()
+        .map(|s| s.as_ref().to_lowercase())
+        .collect();
 
     let subs: Vec<&str> = candidates
         .iter()
