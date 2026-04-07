@@ -140,6 +140,7 @@ muxx current
 | `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                          |
 | `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session                                      |
 | `muxx current`                                                                 | `cur` | Print the current session name                                  |
+| `muxx doctor`                                                                  | `doc` | Validate environment and config; report any issues              |
 | `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                   |
 
 ### `connect` vs `attach`
@@ -254,6 +255,8 @@ All muxx output is plain text or `--json`, so it composes naturally with `fzf`, 
 
 ## Troubleshooting
 
+Run `muxx doctor` first — it checks tmux availability, config validity, project directories, and session name collisions in one pass.
+
 **`tmux: command not found`**
 muxx requires tmux in `PATH`. Install via your package manager (`brew install tmux`, `apt install tmux`, etc.).
 
@@ -261,11 +264,7 @@ muxx requires tmux in `PATH`. Install via your package manager (`brew install tm
 Make sure the `source` / `eval` line is in your shell rc file and your shell was restarted (or the file was sourced). For zsh, the line must come after `compinit`.
 
 **Config parse error on startup**
-muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas or invalid JSON. Validate with:
-
-```sh
-cat ~/.config/muxx/config.json | python3 -m json.tool
-```
+muxx validates `~/.config/muxx/config.json` on load. Check for trailing commas or invalid JSON. Run `muxx doctor` to see the exact parse error.
 
 **Behavior differs inside vs outside tmux**
 Inside an existing session, muxx uses `switch-client`. Outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching.
