@@ -89,6 +89,14 @@ pub enum Commands {
         to: String,
     },
 
+    /// Interactively pick a session using fzf
+    #[command(alias = "p")]
+    Pick {
+        /// Select without attaching (for testing)
+        #[arg(long = "no-attach")]
+        no_attach: bool,
+    },
+
     /// Print the current session name
     #[command(alias = "cur")]
     Current,
@@ -125,6 +133,7 @@ pub fn run() -> anyhow::Result<()> {
         Some(Commands::List { json }) => commands::list::run(json),
         Some(Commands::Kill { name, force }) => commands::kill::run(&name, force),
         Some(Commands::Rename { from, to }) => commands::rename::run(&from, &to),
+        Some(Commands::Pick { no_attach }) => commands::pick::run(no_attach),
         Some(Commands::Current) => commands::current::run(),
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())
