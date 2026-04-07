@@ -46,7 +46,7 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 
 **Not trying to be:**
 
-- A TUI or interactive session picker
+- A full TUI with pane/window layouts
 - A replacement for [sesh](https://github.com/joshmedeski/sesh) or [tmuxinator](https://github.com/tmuxinator/tmuxinator)
 - A pane/window orchestration tool
 
@@ -110,6 +110,9 @@ muxx connect -c ~/Code/myapp --name work
 # Run a command when the session is first created
 muxx connect -c ~/Code/myapp --cmd "npm run dev"
 
+# Interactively pick a session with fzf (requires fzf in PATH)
+muxx pick
+
 # List all sessions (table view with windows, panes, last seen, CWD, startup)
 muxx list
 
@@ -132,6 +135,7 @@ muxx current
 | `muxx`                                                                         |       | Connect to a session in the current directory                   |
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory    |
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates) |
+| `muxx pick`                                                                    | `p`   | Interactively pick a session to attach to using fzf             |
 | `muxx list [--json]`                                                           | `ls`  | List sessions with windows, panes, last seen, CWD, and startup  |
 | `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                          |
 | `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session                                      |
@@ -157,6 +161,10 @@ muxx c myapp              # alias
 # Attach to a running session by name (errors if it doesn't exist)
 muxx attach work
 muxx a work               # alias
+
+# Pick a session interactively with fzf
+muxx pick
+muxx p                    # alias
 
 # Create a session without attaching (useful in scripts)
 muxx connect -c ~/Code/myapp --no-attach
