@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0](https://github.com/harshsandhu44/muxx/compare/v1.5.1...v1.6.0) - 2026-04-07
+
+### Added
+
+- add doctor subcommand for environment and config validation ([#25](https://github.com/harshsandhu44/muxx/pull/25))
+- add pick subcommand for interactive session selection via fzf ([#24](https://github.com/harshsandhu44/muxx/pull/24))
+- richer muxx list output with table layout and session metadata ([#23](https://github.com/harshsandhu44/muxx/pull/23))
+- add rename subcommand ([#21](https://github.com/harshsandhu44/muxx/pull/21))
+
 ## [1.5.1](https://github.com/harshsandhu44/muxx/compare/v1.5.0...v1.5.1) - 2026-04-06
 
 ### Other
