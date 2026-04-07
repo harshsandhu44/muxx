@@ -50,6 +50,7 @@ Each file exposes a single `pub fn run()` function:
 | `list.rs` | Lists sessions as a table or `--json` |
 | `kill.rs` | Kills a session; guards against killing the current one without `--force` |
 | `current.rs` | Prints the current session name; errors if not in tmux |
+| `doctor.rs` | Validates tmux availability, config JSON, project directories, and duplicate session names |
 | `completion.rs` | Emits a shell completion script via `clap_complete` with dynamic session-name values |
 
 ## Core layer (`src/core/`)
@@ -85,6 +86,7 @@ tests/
   list.rs          — integration tests for muxx list
   kill.rs          — integration tests for muxx kill
   current.rs       — integration tests for muxx current
+  doctor.rs        — integration tests for muxx doctor (config, dirs, duplicates)
   completion.rs    — smoke tests for completion output
 ```
 
