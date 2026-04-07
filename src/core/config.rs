@@ -15,7 +15,7 @@ pub struct MuxxConfig {
     pub projects: HashMap<String, ProjectConfig>,
 }
 
-fn config_path() -> PathBuf {
+pub fn config_path() -> PathBuf {
     // Allow override via env var for testing
     if let Ok(p) = std::env::var("MUXX_CONFIG_PATH") {
         return PathBuf::from(p);

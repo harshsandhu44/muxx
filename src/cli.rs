@@ -101,6 +101,10 @@ pub enum Commands {
     #[command(alias = "cur")]
     Current,
 
+    /// Validate environment and configuration
+    #[command(alias = "doc")]
+    Doctor,
+
     /// Print shell completion script
     Completion {
         /// Shell to generate completions for
@@ -135,6 +139,7 @@ pub fn run() -> anyhow::Result<()> {
         Some(Commands::Rename { from, to }) => commands::rename::run(&from, &to),
         Some(Commands::Pick { no_attach }) => commands::pick::run(no_attach),
         Some(Commands::Current) => commands::current::run(),
+        Some(Commands::Doctor) => commands::doctor::run(),
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())
         }
