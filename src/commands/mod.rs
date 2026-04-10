@@ -9,4 +9,5 @@ pub mod list;
 pub mod note;
 pub mod pick;
 pub mod rename;
+pub mod status;
 pub mod tag;

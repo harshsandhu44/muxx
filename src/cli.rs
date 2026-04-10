@@ -133,6 +133,9 @@ pub enum Commands {
         clear: bool,
     },
 
+    /// Print current session name, tags, and note (for shell prompt integration)
+    Status,
+
     /// Print shell completion script
     Completion {
         /// Shell to generate completions for
@@ -228,6 +231,7 @@ pub fn run() -> anyhow::Result<()> {
             text,
             clear,
         }) => commands::note::run(&session, text.as_deref(), clear),
+        Some(Commands::Status) => commands::status::run(),
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())
         }
