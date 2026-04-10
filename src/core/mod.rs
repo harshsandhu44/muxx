@@ -1,6 +1,7 @@
 pub mod config;
 pub mod env;
 pub mod fuzzy;
+pub mod notes;
 pub mod output;
 pub mod session_name;
 pub mod state;
