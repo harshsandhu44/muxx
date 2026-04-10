@@ -22,7 +22,10 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
 
     // Apply tag filter: keep sessions that have ALL of the requested tags.
     if !filter_tags.is_empty() {
-        let normalized: Vec<String> = filter_tags.iter().map(|t| t.trim().to_lowercase()).collect();
+        let normalized: Vec<String> = filter_tags
+            .iter()
+            .map(|t| t.trim().to_lowercase())
+            .collect();
         sessions.retain(|s| {
             let session_tags = tags_store.get_tags(&s.name);
             normalized.iter().all(|ft| session_tags.contains(ft))

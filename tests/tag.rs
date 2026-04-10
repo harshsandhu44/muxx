@@ -110,8 +110,14 @@ fn tag_rm_removes_specific_tag() {
     kill(session);
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    assert!(stdout.contains("work"), "expected 'work' to remain: {stdout}");
-    assert!(!stdout.contains("python"), "expected 'python' removed: {stdout}");
+    assert!(
+        stdout.contains("work"),
+        "expected 'work' to remain: {stdout}"
+    );
+    assert!(
+        !stdout.contains("python"),
+        "expected 'python' removed: {stdout}"
+    );
 }
 
 #[test]
@@ -197,7 +203,10 @@ fn tag_ls_all_shows_multiple_sessions() {
     assert!(stdout.contains(a), "expected session a in output: {stdout}");
     assert!(stdout.contains(b), "expected session b in output: {stdout}");
     assert!(stdout.contains("work"), "expected 'work' tag: {stdout}");
-    assert!(stdout.contains("personal"), "expected 'personal' tag: {stdout}");
+    assert!(
+        stdout.contains("personal"),
+        "expected 'personal' tag: {stdout}"
+    );
 }
 
 #[test]
@@ -262,7 +271,16 @@ fn tag_add_normalises_case() {
     kill(session);
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    assert!(stdout.contains("work"), "tag should be lowercased: {stdout}");
-    assert!(stdout.contains("python"), "tag should be lowercased: {stdout}");
-    assert!(!stdout.contains("WORK"), "should not contain uppercase: {stdout}");
+    assert!(
+        stdout.contains("work"),
+        "tag should be lowercased: {stdout}"
+    );
+    assert!(
+        stdout.contains("python"),
+        "tag should be lowercased: {stdout}"
+    );
+    assert!(
+        !stdout.contains("WORK"),
+        "should not contain uppercase: {stdout}"
+    );
 }

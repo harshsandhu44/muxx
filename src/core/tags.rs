@@ -52,11 +52,7 @@ impl TagsStore {
 
     /// Returns a sorted, deduplicated list of every tag used across all sessions.
     pub fn all_known_tags(&self) -> Vec<String> {
-        let mut all: Vec<String> = self
-            .tags
-            .values()
-            .flat_map(|v| v.iter().cloned())
-            .collect();
+        let mut all: Vec<String> = self.tags.values().flat_map(|v| v.iter().cloned()).collect();
         all.sort();
         all.dedup();
         all
@@ -97,11 +93,7 @@ fn load_tags_from(path: &std::path::Path) -> TagsStore {
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => TagsStore::default(),
         Err(e) => {
-            crate::core::output::error(&format!(
-                "failed to read tags {}: {}",
-                path.display(),
-                e
-            ));
+            crate::core::output::error(&format!("failed to read tags {}: {}", path.display(), e));
             std::process::exit(1);
         }
     }
@@ -253,8 +245,9 @@ mod tests {
 
     #[test]
     fn load_tags_returns_default_when_missing() {
-        let store =
-            load_tags_from(std::path::Path::new("/tmp/muxx-test-nonexistent-tags-file.json"));
+        let store = load_tags_from(std::path::Path::new(
+            "/tmp/muxx-test-nonexistent-tags-file.json",
+        ));
         assert!(store.tags.is_empty());
     }
 

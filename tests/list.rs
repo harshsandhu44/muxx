@@ -202,8 +202,14 @@ fn list_tag_filter_shows_only_matching() {
     kill(untagged);
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    assert!(stdout.contains(tagged), "tagged session should appear: {stdout}");
-    assert!(!stdout.contains(untagged), "untagged session should be excluded: {stdout}");
+    assert!(
+        stdout.contains(tagged),
+        "tagged session should appear: {stdout}"
+    );
+    assert!(
+        !stdout.contains(untagged),
+        "untagged session should be excluded: {stdout}"
+    );
 }
 
 #[test]
@@ -251,8 +257,14 @@ fn list_multiple_tag_filters_and_semantics() {
     kill(one_only);
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    assert!(stdout.contains(both), "session with both tags should appear: {stdout}");
-    assert!(!stdout.contains(one_only), "session missing 'rust' should be excluded: {stdout}");
+    assert!(
+        stdout.contains(both),
+        "session with both tags should appear: {stdout}"
+    );
+    assert!(
+        !stdout.contains(one_only),
+        "session missing 'rust' should be excluded: {stdout}"
+    );
 }
 
 #[test]
