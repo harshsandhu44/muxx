@@ -36,13 +36,13 @@ pub fn run() -> Result<()> {
                 error(&format!("cannot read config {}: {e}", path.display()));
                 issues += 1;
             }
-            Ok(raw) => match serde_json::from_str::<MuxxConfig>(&raw) {
+            Ok(raw) => match toml::from_str::<MuxxConfig>(&raw) {
                 Err(e) => {
-                    error(&format!("invalid JSON in config: {e}"));
+                    error(&format!("invalid TOML in config: {e}"));
                     issues += 1;
                 }
                 Ok(config) => {
-                    success("config file is valid JSON");
+                    success("config file is valid TOML");
 
                     // --- Check 3: project directories ---
                     for (name, proj) in &config.projects {

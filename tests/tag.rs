@@ -305,10 +305,22 @@ fn tag_delete_removes_from_all_sessions() {
 
     let stdout_a = String::from_utf8_lossy(&out_a.stdout).to_string();
     let stdout_b = String::from_utf8_lossy(&out_b.stdout).to_string();
-    assert!(!stdout_a.contains("work"), "work should be deleted from a: {stdout_a}");
-    assert!(!stdout_b.contains("work"), "work should be deleted from b: {stdout_b}");
-    assert!(stdout_a.contains("rust"), "rust should remain on a: {stdout_a}");
-    assert!(stdout_b.contains("python"), "python should remain on b: {stdout_b}");
+    assert!(
+        !stdout_a.contains("work"),
+        "work should be deleted from a: {stdout_a}"
+    );
+    assert!(
+        !stdout_b.contains("work"),
+        "work should be deleted from b: {stdout_b}"
+    );
+    assert!(
+        stdout_a.contains("rust"),
+        "rust should remain on a: {stdout_a}"
+    );
+    assert!(
+        stdout_b.contains("python"),
+        "python should remain on b: {stdout_b}"
+    );
 }
 
 #[test]

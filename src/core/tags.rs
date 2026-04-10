@@ -84,10 +84,11 @@ pub fn tags_path() -> PathBuf {
     if let Ok(p) = std::env::var("MUXX_TAGS_PATH") {
         return PathBuf::from(p);
     }
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("~/.config"))
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("~"))
+        .join(".config")
         .join("muxx")
-        .join("tags.json")
+        .join("tags.toml")
 }
 
 pub fn load_tags() -> TagsStore {
@@ -100,11 +101,11 @@ fn load_tags_from(path: &std::path::Path) -> TagsStore {
             if raw.trim().is_empty() {
                 return TagsStore::default();
             }
-            match serde_json::from_str::<TagsStore>(&raw) {
+            match toml::from_str::<TagsStore>(&raw) {
                 Ok(store) => store,
                 Err(e) => {
                     crate::core::output::error(&format!(
-                        "invalid JSON in {}: {}",
+                        "invalid TOML in {}: {}",
                         path.display(),
                         e
                     ));
@@ -124,8 +125,8 @@ fn save_tags_to(store: &TagsStore, path: &std::path::Path) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let json = serde_json::to_string_pretty(store)?;
-    std::fs::write(path, json)?;
+    let toml = toml::to_string(store)?;
+    std::fs::write(path, toml)?;
     Ok(())
 }
 

@@ -20,10 +20,11 @@ pub fn config_path() -> PathBuf {
     if let Ok(p) = std::env::var("MUXX_CONFIG_PATH") {
         return PathBuf::from(p);
     }
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("~/.config"))
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("~"))
+        .join(".config")
         .join("muxx")
-        .join("config.json")
+        .join("config.toml")
 }
 
 pub fn load_config() -> MuxxConfig {
@@ -32,10 +33,10 @@ pub fn load_config() -> MuxxConfig {
 
 fn load_config_from(path: &std::path::Path) -> MuxxConfig {
     match std::fs::read_to_string(path) {
-        Ok(raw) => match serde_json::from_str::<MuxxConfig>(&raw) {
+        Ok(raw) => match toml::from_str::<MuxxConfig>(&raw) {
             Ok(cfg) => cfg,
             Err(e) => {
-                crate::core::output::error(&format!("invalid JSON in {}: {}", path.display(), e));
+                crate::core::output::error(&format!("invalid TOML in {}: {}", path.display(), e));
                 std::process::exit(1);
             }
         },
@@ -57,14 +58,14 @@ mod tests {
 
     fn base_config() -> MuxxConfig {
         let raw = r#"
-        {
-            "projects": {
-                "myapp": { "cwd": "/home/user/myapp" },
-                "api": { "cwd": "/home/user/api", "startup": "npm run dev" }
-            }
-        }
+[projects.myapp]
+cwd = "/home/user/myapp"
+
+[projects.api]
+cwd = "/home/user/api"
+startup = "npm run dev"
         "#;
-        serde_json::from_str(raw).unwrap()
+        toml::from_str(raw).unwrap()
     }
 
     #[test]
@@ -107,27 +108,31 @@ mod tests {
     fn load_config_parses_valid_file() {
         use std::io::Write;
         let mut f = tempfile::NamedTempFile::new().unwrap();
-        write!(f, r#"{{"projects":{{"foo":{{"cwd":"/tmp/foo"}}}}}}"#).unwrap();
+        write!(f, "[projects.foo]\ncwd = \"/tmp/foo\"\n").unwrap();
         let cfg = load_config_from(f.path());
         assert!(resolve_project(&cfg, "foo").is_some());
     }
 
     #[test]
     fn parse_config_empty_object_is_valid() {
-        let cfg: MuxxConfig = serde_json::from_str("{}").unwrap();
+        let cfg: MuxxConfig = toml::from_str("").unwrap();
         assert!(cfg.projects.is_empty());
     }
 
     #[test]
     fn parse_config_multiple_projects() {
-        let raw = r#"{
-            "projects": {
-                "a": {"cwd": "/a"},
-                "b": {"cwd": "/b", "startup": "npm start"},
-                "c": {"cwd": "/c"}
-            }
-        }"#;
-        let cfg: MuxxConfig = serde_json::from_str(raw).unwrap();
+        let raw = r#"
+[projects.a]
+cwd = "/a"
+
+[projects.b]
+cwd = "/b"
+startup = "npm start"
+
+[projects.c]
+cwd = "/c"
+"#;
+        let cfg: MuxxConfig = toml::from_str(raw).unwrap();
         assert_eq!(cfg.projects.len(), 3);
         assert_eq!(
             resolve_project(&cfg, "b").unwrap().startup.as_deref(),
@@ -138,8 +143,8 @@ mod tests {
 
     #[test]
     fn parse_config_project_cwd_is_preserved() {
-        let raw = r#"{"projects":{"proj":{"cwd":"/home/user/project"}}}"#;
-        let cfg: MuxxConfig = serde_json::from_str(raw).unwrap();
+        let raw = "[projects.proj]\ncwd = \"/home/user/project\"\n";
+        let cfg: MuxxConfig = toml::from_str(raw).unwrap();
         assert_eq!(
             resolve_project(&cfg, "proj").unwrap().cwd,
             "/home/user/project"
@@ -150,11 +155,7 @@ mod tests {
     fn load_config_from_file_with_env_var_path() {
         use std::io::Write;
         let mut f = tempfile::NamedTempFile::new().unwrap();
-        write!(
-            f,
-            r#"{{"projects":{{"envtest":{{"cwd":"/tmp/envtest"}}}}}}"#
-        )
-        .unwrap();
+        write!(f, "[projects.envtest]\ncwd = \"/tmp/envtest\"\n").unwrap();
         // load_config_from accepts a path directly — no env var manipulation needed
         let cfg = load_config_from(f.path());
         assert!(resolve_project(&cfg, "envtest").is_some());

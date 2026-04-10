@@ -34,17 +34,17 @@ fn doctor_no_config_file_exits_zero() {
 }
 
 #[test]
-fn doctor_invalid_json_exits_nonzero() {
+fn doctor_invalid_toml_exits_nonzero() {
     use std::io::Write;
     let mut f = tempfile::NamedTempFile::new().unwrap();
-    write!(f, "not valid json").unwrap();
+    write!(f, "not valid toml = = =").unwrap();
     Command::cargo_bin("muxx")
         .unwrap()
         .args(["doctor"])
         .env("MUXX_CONFIG_PATH", f.path())
         .assert()
         .failure()
-        .stderr(contains("invalid JSON"));
+        .stderr(contains("invalid TOML"));
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn doctor_missing_project_dir_exits_nonzero() {
     let mut f = tempfile::NamedTempFile::new().unwrap();
     write!(
         f,
-        r#"{{"projects":{{"phantom":{{"cwd":"/tmp/muxx-doctor-nonexistent-dir-xyz"}}}}}}"#
+        "[projects.phantom]\ncwd = \"/tmp/muxx-doctor-nonexistent-dir-xyz\"\n"
     )
     .unwrap();
     Command::cargo_bin("muxx")

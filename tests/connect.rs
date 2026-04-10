@@ -169,7 +169,7 @@ fn connect_with_config_alias() {
     let mut config_file = tempfile::NamedTempFile::new().unwrap();
     write!(
         config_file,
-        r#"{{"projects":{{"my-proj":{{"cwd":"{}"}}}}}}"#,
+        "[projects.my-proj]\ncwd = \"{}\"\n",
         project_dir.path().to_str().unwrap()
     )
     .unwrap();
@@ -195,7 +195,7 @@ fn connect_with_config_alias_startup_cmd() {
     let mut config_file = tempfile::NamedTempFile::new().unwrap();
     write!(
         config_file,
-        r#"{{"projects":{{"startupproj":{{"cwd":"{}","startup":"echo hello"}}}}}}"#,
+        "[projects.startupproj]\ncwd = \"{}\"\nstartup = \"echo hello\"\n",
         project_dir.path().to_str().unwrap()
     )
     .unwrap();
