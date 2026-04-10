@@ -1,0 +1,21 @@
+[projects.muxx]
+cwd = "~/Code/muxx"
+
+[projects.api]
+cwd = "~/Code/api"
+startup = "cargo run"
+
+[projects.web]
+cwd = "~/Code/web"
+startup = "npm run dev"
+
+[projects.infra]
+cwd = "~/Code/infra"
+startup = "terraform plan"
+
+[projects.dotfiles]
+cwd = "~/dotfiles"
+
+[projects.scratch]
+cwd = "~/Documents/notes"
+startup = "nvim ."
