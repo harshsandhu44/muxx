@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0](https://github.com/harshsandhu44/muxx/compare/v1.7.0...v1.8.0) - 2026-04-10
+
+### Added
+
+- add status command for shell prompt integration
+- add gc command to clean up orphaned tags and notes
+- add note command for session annotations
+- add session notes store
+- *(tag)* add delete subcommand to remove a tag from all sessions
+
+### Fixed
+
+- use ~/.config path and migrate stores from JSON to TOML
+
+### Other
+
+- update for note, gc, status commands and TOML config format
+- document tag delete subcommand
+
 ## [1.7.0](https://github.com/harshsandhu44/muxx/compare/v1.6.0...v1.7.0) - 2026-04-10
 
 ### Added
