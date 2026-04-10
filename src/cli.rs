@@ -66,6 +66,9 @@ pub enum Commands {
         /// Output as JSON
         #[arg(long)]
         json: bool,
+        /// Filter sessions by tag (repeatable: --tag work --tag rust)
+        #[arg(long = "tag", action = clap::ArgAction::Append)]
+        tags: Vec<String>,
     },
 
     /// Kill a session by name
@@ -95,6 +98,16 @@ pub enum Commands {
         /// Select without attaching (for testing)
         #[arg(long = "no-attach")]
         no_attach: bool,
+        /// Only show sessions matching all given tags
+        #[arg(long = "tag", action = clap::ArgAction::Append)]
+        tags: Vec<String>,
+    },
+
+    /// Add, remove, or list tags on sessions
+    #[command(alias = "t")]
+    Tag {
+        #[command(subcommand)]
+        action: TagAction,
     },
 
     /// Print the current session name
@@ -110,6 +123,52 @@ pub enum Commands {
         /// Shell to generate completions for
         #[arg(value_enum)]
         shell: Shell,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum TagAction {
+    /// Add tags to a session; opens fzf picker when no tags are given
+    Add {
+        /// Session name to tag
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: String,
+        /// Tags to add — omit to pick interactively with fzf
+        #[arg(num_args = 0..)]
+        tags: Vec<String>,
+    },
+
+    /// Remove tags from a session; opens fzf picker when no tags are given
+    Rm {
+        /// Session name
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: String,
+        /// Tags to remove — omit to pick interactively with fzf
+        #[arg(num_args = 0..)]
+        tags: Vec<String>,
+    },
+
+    /// Interactively toggle tags on a session (fzf multi-select)
+    #[command(alias = "e")]
+    Edit {
+        /// Session name
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: String,
+    },
+
+    /// Remove all tags from a session
+    Clear {
+        /// Session name
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: String,
+    },
+
+    /// List tags for a session, or all sessions if no name given
+    #[command(alias = "list")]
+    Ls {
+        /// Session name (omit to list all tagged sessions)
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: Option<String>,
     },
 }
 
@@ -134,10 +193,11 @@ pub fn run() -> anyhow::Result<()> {
             no_attach,
             cmd.as_deref(),
         ),
-        Some(Commands::List { json }) => commands::list::run(json),
+        Some(Commands::List { json, tags }) => commands::list::run(json, &tags),
         Some(Commands::Kill { name, force }) => commands::kill::run(&name, force),
         Some(Commands::Rename { from, to }) => commands::rename::run(&from, &to),
-        Some(Commands::Pick { no_attach }) => commands::pick::run(no_attach),
+        Some(Commands::Pick { no_attach, tags }) => commands::pick::run(no_attach, &tags),
+        Some(Commands::Tag { action }) => commands::tag::run(action),
         Some(Commands::Current) => commands::current::run(),
         Some(Commands::Doctor) => commands::doctor::run(),
         Some(Commands::Completion { shell }) => {
