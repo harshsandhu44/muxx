@@ -118,6 +118,9 @@ pub enum Commands {
     #[command(alias = "doc")]
     Doctor,
 
+    /// Remove tags and notes for sessions that no longer exist in tmux
+    Gc,
+
     /// Get or set a short note on a session
     Note {
         /// Session name
@@ -219,6 +222,7 @@ pub fn run() -> anyhow::Result<()> {
         Some(Commands::Tag { action }) => commands::tag::run(action),
         Some(Commands::Current) => commands::current::run(),
         Some(Commands::Doctor) => commands::doctor::run(),
+        Some(Commands::Gc) => commands::gc::run(),
         Some(Commands::Note {
             session,
             text,

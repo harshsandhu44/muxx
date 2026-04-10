@@ -3,6 +3,7 @@ pub mod completion;
 pub mod connect;
 pub mod current;
 pub mod doctor;
+pub mod gc;
 pub mod kill;
 pub mod list;
 pub mod note;
