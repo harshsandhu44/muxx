@@ -195,6 +195,42 @@ pub fn run(action: TagAction) -> Result<()> {
             }
         }
 
+        TagAction::Delete { tag } => {
+            let mut store = load_tags();
+
+            let to_delete = match tag {
+                Some(t) => t,
+                None => {
+                    // Interactive: pick from all known tags.
+                    let all = store.all_known_tags();
+                    if all.is_empty() {
+                        hint("no tags");
+                        return Ok(());
+                    }
+                    let selected = fzf_multi_select(
+                        &all,
+                        "TAB: select  ·  Enter: delete globally  ·  Esc: cancel",
+                        "delete tag> ",
+                    )?;
+                    match selected.into_iter().next() {
+                        Some(t) => t,
+                        None => return Ok(()),
+                    }
+                }
+            };
+
+            let affected = store.delete_tag(&to_delete);
+            if affected == 0 {
+                hint(&format!("tag '{to_delete}' not found"));
+            } else {
+                save_tags(&store)?;
+                success(&format!(
+                    "deleted tag '{to_delete}' from {affected} session{}",
+                    if affected == 1 { "" } else { "s" }
+                ));
+            }
+        }
+
         TagAction::Clear { session } => {
             let mut store = load_tags();
             store.clear_tags(&session);

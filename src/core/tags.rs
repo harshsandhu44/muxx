@@ -50,6 +50,27 @@ impl TagsStore {
         }
     }
 
+    /// Removes a tag from every session that has it. Sessions with no remaining
+    /// tags are cleaned up. Returns the number of sessions that were affected.
+    pub fn delete_tag(&mut self, tag: &str) -> usize {
+        let normalized = tag.trim().to_lowercase();
+        let mut affected = 0;
+        let sessions: Vec<String> = self.tags.keys().cloned().collect();
+        for session in sessions {
+            if let Some(entry) = self.tags.get_mut(&session) {
+                let before = entry.len();
+                entry.retain(|t| t != &normalized);
+                if entry.len() < before {
+                    affected += 1;
+                    if entry.is_empty() {
+                        self.tags.remove(&session);
+                    }
+                }
+            }
+        }
+        affected
+    }
+
     /// Returns a sorted, deduplicated list of every tag used across all sessions.
     pub fn all_known_tags(&self) -> Vec<String> {
         let mut all: Vec<String> = self.tags.values().flat_map(|v| v.iter().cloned()).collect();
@@ -226,6 +247,43 @@ mod tests {
     fn get_tags_returns_empty_for_unknown_session() {
         let store = TagsStore::default();
         assert!(store.get_tags("unknown").is_empty());
+    }
+
+    #[test]
+    fn delete_tag_removes_from_all_sessions() {
+        let mut store = TagsStore::default();
+        store.add_tags("a", &["work".to_string(), "rust".to_string()]);
+        store.add_tags("b", &["work".to_string(), "personal".to_string()]);
+        let affected = store.delete_tag("work");
+        assert_eq!(affected, 2);
+        assert!(!store.get_tags("a").contains(&"work".to_string()));
+        assert!(!store.get_tags("b").contains(&"work".to_string()));
+        assert!(store.get_tags("a").contains(&"rust".to_string()));
+    }
+
+    #[test]
+    fn delete_tag_cleans_up_empty_sessions() {
+        let mut store = TagsStore::default();
+        store.add_tags("a", &["work".to_string()]);
+        store.delete_tag("work");
+        assert!(!store.tags.contains_key("a"));
+    }
+
+    #[test]
+    fn delete_tag_normalises_case() {
+        let mut store = TagsStore::default();
+        store.add_tags("a", &["work".to_string()]);
+        store.delete_tag("WORK");
+        assert!(store.get_tags("a").is_empty());
+    }
+
+    #[test]
+    fn delete_tag_noop_when_tag_not_found() {
+        let mut store = TagsStore::default();
+        store.add_tags("a", &["work".to_string()]);
+        let affected = store.delete_tag("nonexistent");
+        assert_eq!(affected, 0);
+        assert_eq!(store.get_tags("a"), vec!["work"]);
     }
 
     #[test]

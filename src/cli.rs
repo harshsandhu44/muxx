@@ -148,6 +148,13 @@ pub enum TagAction {
         tags: Vec<String>,
     },
 
+    /// Delete a tag from every session that has it; opens fzf picker when no tag given
+    #[command(alias = "del")]
+    Delete {
+        /// Tag to delete globally (omit to pick interactively with fzf)
+        tag: Option<String>,
+    },
+
     /// Interactively toggle tags on a session (fzf multi-select)
     #[command(alias = "e")]
     Edit {

@@ -244,6 +244,102 @@ fn tag_alias_t_works() {
 }
 
 #[test]
+fn tag_delete_removes_from_all_sessions() {
+    let a = "muxx-test-tag-delete-a";
+    let b = "muxx-test-tag-delete-b";
+    let tags_file = with_tags_file();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", a])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", b])
+        .assert()
+        .success();
+
+    // Tag both sessions with "work" and give each a unique tag too.
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "add", a, "work", "rust"])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "add", b, "work", "python"])
+        .assert()
+        .success();
+
+    // Delete "work" globally.
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "delete", "work"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("2 sessions"));
+
+    // "work" should be gone from both; unique tags should remain.
+    let out_a = Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "ls", a])
+        .output()
+        .unwrap();
+
+    let out_b = Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "ls", b])
+        .output()
+        .unwrap();
+
+    kill(a);
+    kill(b);
+
+    let stdout_a = String::from_utf8_lossy(&out_a.stdout).to_string();
+    let stdout_b = String::from_utf8_lossy(&out_b.stdout).to_string();
+    assert!(!stdout_a.contains("work"), "work should be deleted from a: {stdout_a}");
+    assert!(!stdout_b.contains("work"), "work should be deleted from b: {stdout_b}");
+    assert!(stdout_a.contains("rust"), "rust should remain on a: {stdout_a}");
+    assert!(stdout_b.contains("python"), "python should remain on b: {stdout_b}");
+}
+
+#[test]
+fn tag_delete_alias_del() {
+    let session = "muxx-test-tag-delete-alias";
+    let tags_file = with_tags_file();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", session])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "add", session, "work"])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "del", "work"])
+        .assert()
+        .success();
+
+    kill(session);
+}
+
+#[test]
 fn tag_add_normalises_case() {
     let session = "muxx-test-tag-normalise";
     let tags_file = with_tags_file();
