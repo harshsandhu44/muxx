@@ -25,6 +25,7 @@ cd ~/Code/myapp && muxx
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Commands](#commands)
+- [Tags](#tags)
 - [Config](#config)
 - [Shell completions](#shell-completions)
 - [Shell integration](#shell-integration)
@@ -113,8 +114,18 @@ muxx connect -c ~/Code/myapp --cmd "npm run dev"
 # Interactively pick a session with fzf (requires fzf in PATH)
 muxx pick
 
-# List all sessions (table view with windows, panes, last seen, CWD, startup)
+# List all sessions (table view with windows, panes, last seen, CWD, startup, tags)
 muxx list
+
+# Tag a session interactively — fzf multi-select over all known tags
+muxx tag edit myapp
+
+# Add tags explicitly
+muxx tag add myapp work python
+
+# Filter the session list or picker by tag
+muxx list --tag work
+muxx pick --tag work
 
 # Rename a session
 muxx rename myapp work
@@ -130,18 +141,19 @@ muxx current
 
 ## Commands
 
-| Command                                                                        | Alias | Description                                                     |
-| ------------------------------------------------------------------------------ | ----- | --------------------------------------------------------------- |
-| `muxx`                                                                         |       | Connect to a session in the current directory                   |
-| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory    |
-| `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates) |
-| `muxx pick`                                                                    | `p`   | Interactively pick a session to attach to using fzf             |
-| `muxx list [--json]`                                                           | `ls`  | List sessions with windows, panes, last seen, CWD, and startup  |
-| `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                          |
-| `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session                                      |
-| `muxx current`                                                                 | `cur` | Print the current session name                                  |
-| `muxx doctor`                                                                  | `doc` | Validate environment and config; report any issues              |
-| `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                   |
+| Command                                                                        | Alias | Description                                                          |
+| ------------------------------------------------------------------------------ | ----- | -------------------------------------------------------------------- |
+| `muxx`                                                                         |       | Connect to a session in the current directory                        |
+| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory         |
+| `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)      |
+| `muxx pick [--tag <tag>]...`                                                   | `p`   | Interactively pick a session using fzf; tags shown and searchable    |
+| `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, and tags |
+| `muxx tag <subcommand>`                                                        | `t`   | Add, remove, or list tags on sessions                                |
+| `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                               |
+| `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session (tags are migrated automatically)         |
+| `muxx current`                                                                 | `cur` | Print the current session name                                       |
+| `muxx doctor`                                                                  | `doc` | Validate environment and config; report any issues                   |
+| `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                        |
 
 ### `connect` vs `attach`
 
@@ -167,18 +179,77 @@ muxx a work               # alias
 muxx pick
 muxx p                    # alias
 
+# Pick only sessions tagged "work"
+muxx pick --tag work
+
 # Create a session without attaching (useful in scripts)
 muxx connect -c ~/Code/myapp --no-attach
 
-# List sessions as JSON (includes name, windows, attached, created, last_attached)
+# List sessions as JSON (includes name, windows, attached, created, last_attached, tags)
 muxx list --json
+
+# List only sessions tagged "work"
+muxx list --tag work
 
 # Force-kill the current session
 muxx kill mysession --force
 
-# Rename a session
+# Rename a session (tags are migrated automatically)
 muxx rename old-name new-name
 muxx rn old-name new-name   # alias
+```
+
+---
+
+## Tags
+
+Sessions can have any number of free-form tags (e.g. `work`, `python`, `personal`). Tags persist by session name — they survive kills and recreations, and are migrated automatically on rename.
+
+Tags are stored in `~/.config/muxx/tags.json` (overridable via `MUXX_TAGS_PATH`).
+
+### Managing tags
+
+```sh
+# Interactive toggle — fzf multi-select over all known tags
+# Currently applied tags appear first, marked with *
+muxx tag edit myapp
+muxx t e myapp              # alias
+
+# Add tags — opens fzf picker when no tags given
+muxx tag add myapp work python
+muxx tag add myapp          # interactive: pick from known tags not already applied
+
+# Remove tags — opens fzf picker when no tags given
+muxx tag rm myapp python
+muxx tag rm myapp           # interactive: pick from session's current tags
+
+# Remove all tags
+muxx tag clear myapp
+
+# List tags
+muxx tag ls                 # all tagged sessions
+muxx tag ls myapp           # one session
+muxx tag list myapp         # alias for ls
+```
+
+### Filtering by tag
+
+`--tag` uses AND semantics — a session must have **all** listed tags to appear.
+
+```sh
+muxx list --tag work
+muxx list --tag work --tag python   # sessions that have BOTH tags
+muxx pick --tag work                # fzf picker pre-filtered to "work" sessions
+```
+
+### Tags in the fzf picker
+
+`muxx pick` shows tags alongside session names in fzf, so you can fuzzy-search across both:
+
+```
+> my-project        python, work
+  personal-site     personal
+  scratch
 ```
 
 ---

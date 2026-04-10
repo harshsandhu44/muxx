@@ -47,7 +47,10 @@ Each file exposes a single `pub fn run()` function:
 |---|---|
 | `connect.rs` | Creates or reattaches to a session; resolves alias → directory → session name |
 | `attach.rs` | Attaches or switches to an existing session; never creates |
-| `list.rs` | Lists sessions as a table or `--json` |
+| `list.rs` | Lists sessions as a table or `--json`; supports `--tag` filtering and shows TAGS column |
+| `pick.rs` | fzf-based session picker; shows tags alongside names; supports `--tag` pre-filter |
+| `tag.rs` | Manages session tags: `add`, `rm`, `edit` (fzf toggle), `clear`, `ls` |
+| `rename.rs` | Renames a session; migrates its tags to the new name |
 | `kill.rs` | Kills a session; guards against killing the current one without `--force` |
 | `current.rs` | Prints the current session name; errors if not in tmux |
 | `doctor.rs` | Validates tmux availability, config JSON, project directories, and duplicate session names |
@@ -60,18 +63,23 @@ Utilities shared across command modules:
 | File | Responsibility |
 |---|---|
 | `config.rs` | Loads `~/.config/muxx/config.json`; resolves project aliases to `ProjectConfig` |
+| `tags.rs` | Loads and saves `~/.config/muxx/tags.json`; `TagsStore` maps session names to sorted tag lists |
 | `env.rs` | `is_inside_tmux()`, home expansion, directory resolution |
 | `tmux.rs` | Wraps tmux CLI calls; `run()` captures stdout, `run_interactive()` inherits stdio for attach/switch |
 | `session_name.rs` | Sanitizes arbitrary strings into valid tmux session names (lowercase, hyphens) |
+| `state.rs` | Persists the last-attached session name to `~/.local/share/muxx/last_session` |
 | `output.rs` | ANSI-colored print helpers (`success`, `info`, `error`, `hint`) |
+| `fuzzy.rs` | Two-pass substring/subsequence matching used for fuzzy session lookup |
 
 ## Pure vs shell-dependent
 
 **Unit-testable without tmux** — these functions only do string manipulation or JSON parsing and are tested with in-source `#[cfg(test)]` modules:
 
 - `core/config.rs` — JSON parsing and struct logic
+- `core/tags.rs` — tag store mutations, serialization round-trips
 - `core/env.rs` — path expansion
 - `core/session_name.rs` — string sanitization
+- `core/fuzzy.rs` — substring/subsequence matching
 
 **Requires a running tmux server** — these are exercised by integration tests in `tests/`:
 
@@ -83,10 +91,14 @@ Utilities shared across command modules:
 ```
 tests/
   connect.rs       — integration tests for muxx connect
-  list.rs          — integration tests for muxx list
+  list.rs          — integration tests for muxx list (including --tag filtering)
+  tag.rs           — integration tests for muxx tag (add/rm/clear/ls/edit)
   kill.rs          — integration tests for muxx kill
+  rename.rs        — integration tests for muxx rename
+  attach.rs        — integration tests for muxx attach
   current.rs       — integration tests for muxx current
   doctor.rs        — integration tests for muxx doctor (config, dirs, duplicates)
+  pick.rs          — smoke tests for muxx pick (fzf requires a tty; full flow not tested in CI)
   completion.rs    — smoke tests for completion output
 ```
 
