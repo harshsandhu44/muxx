@@ -148,7 +148,7 @@ muxx current
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)      |
 | `muxx pick [--tag <tag>]...`                                                   | `p`   | Interactively pick a session using fzf; tags shown and searchable    |
 | `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, and tags |
-| `muxx tag <subcommand>`                                                        | `t`   | Add, remove, or list tags on sessions                                |
+| `muxx tag <subcommand>`                                                        | `t`   | Add, remove, delete, or list tags on sessions                        |
 | `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                               |
 | `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session (tags are migrated automatically)         |
 | `muxx current`                                                                 | `cur` | Print the current session name                                       |
@@ -223,8 +223,13 @@ muxx tag add myapp          # interactive: pick from known tags not already appl
 muxx tag rm myapp python
 muxx tag rm myapp           # interactive: pick from session's current tags
 
-# Remove all tags
+# Remove all tags from a session
 muxx tag clear myapp
+
+# Delete a tag globally — removes it from every session that has it
+muxx tag delete work
+muxx tag del work           # alias
+muxx tag delete             # interactive: fzf picker over all known tags
 
 # List tags
 muxx tag ls                 # all tagged sessions

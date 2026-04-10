@@ -49,7 +49,7 @@ Each file exposes a single `pub fn run()` function:
 | `attach.rs` | Attaches or switches to an existing session; never creates |
 | `list.rs` | Lists sessions as a table or `--json`; supports `--tag` filtering and shows TAGS column |
 | `pick.rs` | fzf-based session picker; shows tags alongside names; supports `--tag` pre-filter |
-| `tag.rs` | Manages session tags: `add`, `rm`, `edit` (fzf toggle), `clear`, `ls` |
+| `tag.rs` | Manages session tags: `add`, `rm`, `edit` (fzf toggle), `delete` (global), `clear`, `ls` |
 | `rename.rs` | Renames a session; migrates its tags to the new name |
 | `kill.rs` | Kills a session; guards against killing the current one without `--force` |
 | `current.rs` | Prints the current session name; errors if not in tmux |
@@ -63,7 +63,7 @@ Utilities shared across command modules:
 | File | Responsibility |
 |---|---|
 | `config.rs` | Loads `~/.config/muxx/config.json`; resolves project aliases to `ProjectConfig` |
-| `tags.rs` | Loads and saves `~/.config/muxx/tags.json`; `TagsStore` maps session names to sorted tag lists |
+| `tags.rs` | Loads and saves `~/.config/muxx/tags.json`; `TagsStore` maps session names to sorted tag lists; `delete_tag` removes a tag globally across all sessions |
 | `env.rs` | `is_inside_tmux()`, home expansion, directory resolution |
 | `tmux.rs` | Wraps tmux CLI calls; `run()` captures stdout, `run_interactive()` inherits stdio for attach/switch |
 | `session_name.rs` | Sanitizes arbitrary strings into valid tmux session names (lowercase, hyphens) |
