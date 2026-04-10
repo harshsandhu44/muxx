@@ -118,6 +118,18 @@ pub enum Commands {
     #[command(alias = "doc")]
     Doctor,
 
+    /// Get or set a short note on a session
+    Note {
+        /// Session name
+        #[arg(add = ArgValueCompleter::new(complete_sessions))]
+        session: String,
+        /// Note text to set (omit to print the current note)
+        text: Option<String>,
+        /// Clear the note
+        #[arg(long)]
+        clear: bool,
+    },
+
     /// Print shell completion script
     Completion {
         /// Shell to generate completions for
@@ -207,6 +219,11 @@ pub fn run() -> anyhow::Result<()> {
         Some(Commands::Tag { action }) => commands::tag::run(action),
         Some(Commands::Current) => commands::current::run(),
         Some(Commands::Doctor) => commands::doctor::run(),
+        Some(Commands::Note {
+            session,
+            text,
+            clear,
+        }) => commands::note::run(&session, text.as_deref(), clear),
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())
         }

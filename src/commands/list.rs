@@ -5,6 +5,7 @@ use serde::Serialize;
 
 use crate::core::{
     config::load_config,
+    notes::load_notes,
     output::{error, hint},
     tags::load_tags,
     tmux::{get_panes_per_session, get_session_paths, has_tmux, list_sessions, TmuxSession},
@@ -31,10 +32,12 @@ fn format_age(ts: u64) -> String {
 }
 
 #[derive(Serialize)]
-struct SessionWithTags<'a> {
+struct SessionWithMeta<'a> {
     #[serde(flatten)]
     session: &'a TmuxSession,
     tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    note: Option<String>,
 }
 
 pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
@@ -45,6 +48,7 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
 
     let mut sessions = list_sessions();
     let tags_store = load_tags();
+    let notes_store = load_notes();
 
     // Apply tag filter: keep sessions that have ALL of the requested tags.
     if !filter_tags.is_empty() {
@@ -59,14 +63,15 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
     }
 
     if json {
-        let with_tags: Vec<SessionWithTags> = sessions
+        let with_meta: Vec<SessionWithMeta> = sessions
             .iter()
-            .map(|s| SessionWithTags {
+            .map(|s| SessionWithMeta {
                 session: s,
                 tags: tags_store.get_tags(&s.name),
+                note: notes_store.get_note(&s.name).map(str::to_string),
             })
             .collect();
-        println!("{}", serde_json::to_string_pretty(&with_tags)?);
+        println!("{}", serde_json::to_string_pretty(&with_meta)?);
         return Ok(());
     }
 
@@ -89,6 +94,7 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
         cwd: String,
         startup: bool,
         tags: String,
+        note: String,
     }
 
     let rows: Vec<Row> = sessions
@@ -112,6 +118,7 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
                 } else {
                     tag_list.join(", ")
                 },
+                note: notes_store.get_note(&s.name).unwrap_or("-").to_string(),
             }
         })
         .collect();
@@ -123,6 +130,7 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
     let age_w = rows.iter().map(|r| r.age.len()).max().unwrap_or(0).max(9);
     let cwd_w = rows.iter().map(|r| r.cwd.len()).max().unwrap_or(0).max(3);
     let tags_w = rows.iter().map(|r| r.tags.len()).max().unwrap_or(0).max(4);
+    let note_w = rows.iter().map(|r| r.note.len()).max().unwrap_or(0).max(4);
     // "attached" / "detached" are always 8 chars — header "STATE" is 5.
     let state_w = 8_usize;
     // "STARTUP" header is 7 chars; symbol value is 1 char — pad explicitly.
@@ -130,8 +138,8 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
 
     // Header
     println!(
-        "\x1b[2m{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {:<state_w$}  {:<cwd_w$}  {:<startup_w$}  TAGS\x1b[0m",
-        "NAME", "WINS", "PANES", "LAST SEEN", "STATE", "CWD", "STARTUP",
+        "\x1b[2m{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {:<state_w$}  {:<cwd_w$}  {:<startup_w$}  {:<tags_w$}  NOTE\x1b[0m",
+        "NAME", "WINS", "PANES", "LAST SEEN", "STATE", "CWD", "STARTUP", "TAGS",
     );
     // Separator
     let total = name_w
@@ -148,7 +156,9 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
         + 2
         + startup_w
         + 2
-        + tags_w;
+        + tags_w
+        + 2
+        + note_w;
     println!("\x1b[2m{}\x1b[0m", "─".repeat(total));
 
     // Rows
@@ -169,8 +179,8 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
         // startup symbol is always 1 visible char; pad to startup_w.
         let startup_pad = " ".repeat(startup_w.saturating_sub(1));
         println!(
-            "{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {state_colored}{state_pad}  {:<cwd_w$}  {startup_sym}{startup_pad}  {tags}",
-            r.name, r.wins, r.panes, r.age, r.cwd, tags = r.tags,
+            "{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {state_colored}{state_pad}  {:<cwd_w$}  {startup_sym}{startup_pad}  {:<tags_w$}  {note}",
+            r.name, r.wins, r.panes, r.age, r.cwd, r.tags, note = r.note,
         );
     }
 

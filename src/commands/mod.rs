@@ -5,6 +5,7 @@ pub mod current;
 pub mod doctor;
 pub mod kill;
 pub mod list;
+pub mod note;
 pub mod pick;
 pub mod rename;
 pub mod tag;

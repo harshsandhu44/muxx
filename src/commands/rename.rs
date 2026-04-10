@@ -37,6 +37,11 @@ pub fn run(from: &str, to: &str) -> Result<()> {
     tag_store.rename_session(from, &to);
     let _ = crate::core::tags::save_tags(&tag_store);
 
+    // Migrate note to the new session name (best-effort).
+    let mut notes_store = crate::core::notes::load_notes();
+    notes_store.rename_session(from, &to);
+    let _ = crate::core::notes::save_notes(&notes_store);
+
     success(&format!("renamed: {from} -> {to}"));
     Ok(())
 }
