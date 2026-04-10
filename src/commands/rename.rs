@@ -32,6 +32,11 @@ pub fn run(from: &str, to: &str) -> Result<()> {
 
     state::update_last_session_if(from, &to);
 
+    // Migrate tags to the new session name (best-effort).
+    let mut tag_store = crate::core::tags::load_tags();
+    tag_store.rename_session(from, &to);
+    let _ = crate::core::tags::save_tags(&tag_store);
+
     success(&format!("renamed: {from} -> {to}"));
     Ok(())
 }
