@@ -1,15 +1,14 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::core::{
     notes::{load_notes, save_notes},
-    output::{error, hint, success},
+    output::{hint, success},
     tmux::has_tmux,
 };
 
 pub fn run(session: &str, text: Option<&str>, clear: bool) -> Result<()> {
     if !has_tmux() {
-        error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     let mut store = load_notes();

@@ -22,23 +22,21 @@ pub fn run(session: &str) -> Result<()> {
 
     match matches.len() {
         0 => {
-            output::error(&format!("session '{}' does not exist", session));
             output::hint("run 'muxx list' to see active sessions");
-            std::process::exit(1);
+            bail!("session '{}' does not exist", session);
         }
         1 => {
             output::info(&format!("matched session '{}'", matches[0]));
             do_attach(matches[0])
         }
         _ => {
-            output::error(&format!(
-                "ambiguous session name '{}', did you mean:",
-                session
-            ));
             for m in &matches {
                 output::hint(&format!("  {m}"));
             }
-            std::process::exit(1);
+            bail!(
+                "ambiguous session name '{}', did you mean one of the above?",
+                session
+            );
         }
     }
 }
@@ -70,9 +68,8 @@ fn attach_last() -> Result<()> {
     match state::load_last_session() {
         Some(name) => do_attach(&name),
         None => {
-            output::error("no last session recorded");
             output::hint("use 'muxx attach <name>' to attach to a session first");
-            std::process::exit(1);
+            bail!("no last session recorded");
         }
     }
 }

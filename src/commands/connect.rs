@@ -1,9 +1,9 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::core::{
     config::{load_config, resolve_project},
     env::{is_inside_tmux, resolve_dir},
-    output::{error, info, success},
+    output::{info, success},
     session_name::resolve_session_name,
     state,
     tmux::{attach_session, create_session, has_session, has_tmux, send_keys, switch_client},
@@ -17,8 +17,7 @@ pub fn run(
     cmd_flag: Option<&str>,
 ) -> Result<()> {
     if !has_tmux() {
-        error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     let config = load_config();
@@ -44,8 +43,7 @@ pub fn run(
             return do_attach(target, no_attach);
         }
 
-        error(&format!("session not found: {target}"));
-        std::process::exit(1);
+        bail!("session not found: {target}");
     }
 
     // No args: fall back to current directory
@@ -58,14 +56,7 @@ fn run_dir_based(
     no_attach: bool,
     startup_cmd: Option<&str>,
 ) -> Result<()> {
-    let dir = match resolve_dir(dir_target) {
-        Ok(d) => d,
-        Err(e) => {
-            error(&e.to_string());
-            std::process::exit(1);
-        }
-    };
-
+    let dir = resolve_dir(dir_target)?;
     let dir_str = dir.to_string_lossy();
     let session_name = resolve_session_name(&dir_str, name_override);
 
@@ -73,8 +64,7 @@ fn run_dir_based(
 
     if !existed {
         if !create_session(&session_name, &dir_str) {
-            error(&format!("failed to create session: {session_name}"));
-            std::process::exit(1);
+            bail!("failed to create session: {session_name}");
         }
         success(&format!("created: {session_name}"));
         if let Some(cmd) = startup_cmd {
@@ -96,12 +86,10 @@ fn do_attach(session_name: &str, no_attach: bool) -> Result<()> {
 
     if is_inside_tmux() {
         if !switch_client(session_name) {
-            error(&format!("failed to switch to session: {session_name}"));
-            std::process::exit(1);
+            bail!("failed to switch to session: {session_name}");
         }
     } else if !attach_session(session_name) {
-        error(&format!("failed to attach to session: {session_name}"));
-        std::process::exit(1);
+        bail!("failed to attach to session: {session_name}");
     }
 
     Ok(())

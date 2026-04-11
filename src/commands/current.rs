@@ -1,11 +1,10 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
-use crate::core::{env::is_inside_tmux, output::error, tmux::current_session};
+use crate::core::{env::is_inside_tmux, tmux::current_session};
 
 pub fn run() -> Result<()> {
     if !is_inside_tmux() {
-        error("not inside a tmux session");
-        std::process::exit(1);
+        bail!("not inside a tmux session");
     }
 
     match current_session() {
@@ -13,9 +12,6 @@ pub fn run() -> Result<()> {
             println!("{name}");
             Ok(())
         }
-        None => {
-            error("could not determine current session");
-            std::process::exit(1);
-        }
+        None => bail!("could not determine current session"),
     }
 }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::core::{
     notes::{load_notes, save_notes},
@@ -9,8 +9,7 @@ use crate::core::{
 
 pub fn run() -> Result<()> {
     if !has_tmux() {
-        crate::core::output::error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     let live: Vec<String> = list_sessions().into_iter().map(|s| s.name).collect();
@@ -18,33 +17,15 @@ pub fn run() -> Result<()> {
     let mut tags_store = load_tags();
     let mut notes_store = load_notes();
 
-    // GC tags
-    let dead_tag_sessions: Vec<String> = tags_store
-        .tags
-        .keys()
-        .filter(|s| !live.contains(s))
-        .cloned()
-        .collect();
-    let tags_removed = dead_tag_sessions.len();
-    for s in &dead_tag_sessions {
-        tags_store.tags.remove(s);
-    }
+    let dead_tag_sessions = tags_store.gc(&live);
+    let dead_note_sessions = notes_store.gc(&live);
 
-    // GC notes — collect names before mutating
-    let dead_note_sessions: Vec<String> = notes_store
-        .notes
-        .keys()
-        .filter(|s| !live.contains(s))
-        .cloned()
-        .collect();
-    notes_store.gc(&live);
-
-    if tags_removed == 0 && dead_note_sessions.is_empty() {
+    if dead_tag_sessions.is_empty() && dead_note_sessions.is_empty() {
         hint("nothing to clean up");
         return Ok(());
     }
 
-    if tags_removed > 0 {
+    if !dead_tag_sessions.is_empty() {
         save_tags(&tags_store)?;
         for s in &dead_tag_sessions {
             success(&format!("removed tags for dead session: {s}"));

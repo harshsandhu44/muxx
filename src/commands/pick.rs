@@ -1,11 +1,11 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::core::{
     env::is_inside_tmux,
-    output::{error, hint},
+    output::hint,
     state,
     tags::load_tags,
     tmux::{attach_session, has_tmux, list_sessions, switch_client},
@@ -13,8 +13,7 @@ use crate::core::{
 
 pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
     if !has_tmux() {
-        error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     let mut sessions = list_sessions();
@@ -59,8 +58,7 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
     {
         Ok(c) => c,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            error("fzf not found in PATH — install it to use pick");
-            std::process::exit(1);
+            bail!("fzf not found in PATH — install it to use pick");
         }
         Err(e) => return Err(e.into()),
     };
@@ -88,12 +86,10 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
 
     if is_inside_tmux() {
         if !switch_client(&session_name) {
-            error(&format!("failed to switch to session: {session_name}"));
-            std::process::exit(1);
+            bail!("failed to switch to session: {session_name}");
         }
     } else if !attach_session(&session_name) {
-        error(&format!("failed to attach to session: {session_name}"));
-        std::process::exit(1);
+        bail!("failed to attach to session: {session_name}");
     }
 
     Ok(())

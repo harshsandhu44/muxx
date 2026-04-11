@@ -1,22 +1,16 @@
-use anyhow::Result;
+use std::fmt::Write;
 
-use crate::core::{
-    env::is_inside_tmux, notes::load_notes, output::error, tags::load_tags, tmux::current_session,
-};
+use anyhow::{bail, Result};
+
+use crate::core::{env::is_inside_tmux, notes::load_notes, tags::load_tags, tmux::current_session};
 
 pub fn run() -> Result<()> {
     if !is_inside_tmux() {
-        error("not inside a tmux session");
-        std::process::exit(1);
+        bail!("not inside a tmux session");
     }
 
-    let name = match current_session() {
-        Some(n) => n,
-        None => {
-            error("could not determine current session");
-            std::process::exit(1);
-        }
-    };
+    let name =
+        current_session().ok_or_else(|| anyhow::anyhow!("could not determine current session"))?;
 
     let tags = load_tags().get_tags(&name);
     let notes_store = load_notes();
@@ -25,11 +19,11 @@ pub fn run() -> Result<()> {
     let mut out = name.clone();
 
     if !tags.is_empty() {
-        out.push_str(&format!(" [{}]", tags.join(",")));
+        write!(out, " [{}]", tags.join(",")).unwrap();
     }
 
     if let Some(n) = note {
-        out.push_str(&format!(" — {n}"));
+        write!(out, " \u{2014} {n}").unwrap();
     }
 
     println!("{out}");

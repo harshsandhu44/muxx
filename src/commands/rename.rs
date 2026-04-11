@@ -1,7 +1,7 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use crate::core::{
-    output::{error, success},
+    output::success,
     session_name::sanitize_session_name,
     state,
     tmux::{has_session, has_tmux, rename_session},
@@ -9,25 +9,21 @@ use crate::core::{
 
 pub fn run(from: &str, to: &str) -> Result<()> {
     if !has_tmux() {
-        error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     if !has_session(from) {
-        error(&format!("session not found: {from}"));
-        std::process::exit(1);
+        bail!("session not found: {from}");
     }
 
     let to = sanitize_session_name(to);
 
     if has_session(&to) {
-        error(&format!("session already exists: {to}"));
-        std::process::exit(1);
+        bail!("session already exists: {to}");
     }
 
     if !rename_session(from, &to) {
-        error(&format!("failed to rename session: {from}"));
-        std::process::exit(1);
+        bail!("failed to rename session: {from}");
     }
 
     state::update_last_session_if(from, &to);

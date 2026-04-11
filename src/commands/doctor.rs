@@ -82,10 +82,8 @@ pub fn run() -> Result<()> {
     // --- Summary ---
     if issues == 0 {
         success("all checks passed");
+        Ok(())
     } else {
-        error(&format!("{issues} issue(s) found"));
-        std::process::exit(1);
+        anyhow::bail!("{issues} issue(s) found")
     }
-
-    Ok(())
 }

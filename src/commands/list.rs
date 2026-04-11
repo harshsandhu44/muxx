@@ -1,12 +1,12 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde::Serialize;
 
 use crate::core::{
     config::load_config,
     notes::load_notes,
-    output::{error, hint},
+    output::hint,
     tags::load_tags,
     tmux::{get_panes_per_session, get_session_paths, has_tmux, list_sessions, TmuxSession},
 };
@@ -42,8 +42,7 @@ struct SessionWithMeta<'a> {
 
 pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
     if !has_tmux() {
-        error("tmux not found in PATH");
-        std::process::exit(1);
+        bail!("tmux not found in PATH");
     }
 
     let mut sessions = list_sessions();
