@@ -31,6 +31,8 @@ muxx is a tmux session automation CLI. Single binary crate, no library crates.
   - `notes.rs` — `NotesStore` loaded from `~/.config/muxx/notes.toml` (or `MUXX_NOTES_PATH` env var)
   - `env.rs` — `is_inside_tmux()`, `expand_home()`, `resolve_dir()`
   - `session_name.rs` — sanitizes path-derived names (basename → lowercase, spaces/invalid chars → hyphens); respects `--name` override
+  - `state.rs` — persists last-attached session name to `~/.local/share/muxx/last_session`
+  - `fuzzy.rs` — two-pass substring/subsequence matching used for session lookup
   - `output.rs` — ANSI color helpers (`success`, `info`, `error`, `hint`)
 
 **Testing:** unit tests live in-source on pure functions; integration tests in `tests/` use `assert_cmd` + `--no-attach` flag to avoid terminal hijacking.

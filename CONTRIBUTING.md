@@ -109,14 +109,14 @@ See [docs/architecture.md](docs/architecture.md#adding-a-new-command) for the fu
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/) because release-plz uses commit messages to determine version bumps and generate the changelog automatically.
 
-| Type | When to use | Release effect |
-|------|-------------|----------------|
-| `fix:` | bug fixes | patch (`1.2.2` → `1.2.3`) |
-| `feat:` | new behavior visible to users | minor (`1.2.2` → `1.3.0`) |
-| `docs:` | documentation only | none |
-| `chore:` | maintenance, tooling, deps | none |
-| `test:` | adding or improving tests | none |
-| `refactor:` | restructuring without behavior change | none |
+| Type        | When to use                           | Release effect            |
+| ----------- | ------------------------------------- | ------------------------- |
+| `fix:`      | bug fixes                             | patch (`1.2.2` → `1.2.3`) |
+| `feat:`     | new behavior visible to users         | minor (`1.2.2` → `1.3.0`) |
+| `docs:`     | documentation only                    | none                      |
+| `chore:`    | maintenance, tooling, deps            | none                      |
+| `test:`     | adding or improving tests             | none                      |
+| `refactor:` | restructuring without behavior change | none                      |
 
 `BREAKING CHANGE:` in the commit footer triggers a major release (`1.2.2` → `2.0.0`).
 
@@ -136,13 +136,16 @@ refactor(session_name): extract sanitize logic into helper
 1. Fork the repo and create a branch from `main`.
 2. Make your changes with tests and docs.
 3. Run the full check suite locally:
+
    ```sh
    cargo fmt && cargo clippy -- -D warnings && cargo test
    ```
+
 4. Open a PR against `main` using the pull request template.
 5. A maintainer will review and leave feedback or merge.
 
 **What to expect:**
+
 - Feedback within a few days for small changes.
 - Larger or design-heavy changes may take longer and require discussion.
 - CI must pass before merging.
@@ -163,7 +166,6 @@ refactor(session_name): extract sanitize logic into helper
 muxx is intentionally minimal. These types of changes are generally not a good fit:
 
 - TUI or interactive session picker
-- zoxide or directory-jumping integration
 - Pane and window layout orchestration
 - Plugin or extension system
 - Telemetry or analytics

@@ -27,6 +27,6 @@ This Code of Conduct applies in all project spaces: GitHub issues, pull requests
 
 ## Enforcement
 
-Violations can be reported by opening a private issue or contacting the maintainer directly through GitHub. All reports will be reviewed and handled with discretion.
+Violations can be reported by contacting the maintainer directly through GitHub ([@harshsandhu44](https://github.com/harshsandhu44)). All reports will be reviewed and handled with discretion.
 
 This project follows the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) (v2.1) as its baseline standard.
