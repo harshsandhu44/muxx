@@ -34,19 +34,19 @@ impl NotesStore {
         }
     }
 
-    /// Remove notes for sessions not in `live`. Returns the number of entries removed.
-    pub fn gc(&mut self, live: &[String]) -> usize {
+    /// Remove notes for sessions not in `live`. Returns the names of removed sessions.
+    pub fn gc(&mut self, live: &[String]) -> Vec<String> {
+        let live_set: std::collections::HashSet<&str> = live.iter().map(String::as_str).collect();
         let dead: Vec<String> = self
             .notes
             .keys()
-            .filter(|s| !live.contains(s))
+            .filter(|s| !live_set.contains(s.as_str()))
             .cloned()
             .collect();
-        let count = dead.len();
-        for s in dead {
-            self.notes.remove(&s);
+        for s in &dead {
+            self.notes.remove(s);
         }
-        count
+        dead
     }
 }
 
@@ -174,7 +174,8 @@ mod tests {
         store.set_note("alive", "keep");
         store.set_note("dead", "remove");
         let removed = store.gc(&["alive".to_string()]);
-        assert_eq!(removed, 1);
+        assert_eq!(removed.len(), 1);
+        assert_eq!(removed[0], "dead");
         assert!(store.get_note("alive").is_some());
         assert!(store.get_note("dead").is_none());
     }
@@ -184,7 +185,7 @@ mod tests {
         let mut store = NotesStore::default();
         store.set_note("a", "note");
         let removed = store.gc(&["a".to_string()]);
-        assert_eq!(removed, 0);
+        assert!(removed.is_empty());
     }
 
     #[test]

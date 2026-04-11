@@ -55,20 +55,30 @@ impl TagsStore {
     pub fn delete_tag(&mut self, tag: &str) -> usize {
         let normalized = tag.trim().to_lowercase();
         let mut affected = 0;
-        let sessions: Vec<String> = self.tags.keys().cloned().collect();
-        for session in sessions {
-            if let Some(entry) = self.tags.get_mut(&session) {
-                let before = entry.len();
-                entry.retain(|t| t != &normalized);
-                if entry.len() < before {
-                    affected += 1;
-                    if entry.is_empty() {
-                        self.tags.remove(&session);
-                    }
-                }
+        self.tags.retain(|_, entry| {
+            let before = entry.len();
+            entry.retain(|t| t != &normalized);
+            if entry.len() < before {
+                affected += 1;
             }
-        }
+            !entry.is_empty()
+        });
         affected
+    }
+
+    /// Remove tags for sessions not in `live`. Returns the names of removed sessions.
+    pub fn gc(&mut self, live: &[String]) -> Vec<String> {
+        let live_set: std::collections::HashSet<&str> = live.iter().map(String::as_str).collect();
+        let dead: Vec<String> = self
+            .tags
+            .keys()
+            .filter(|s| !live_set.contains(s.as_str()))
+            .cloned()
+            .collect();
+        for s in &dead {
+            self.tags.remove(s);
+        }
+        dead
     }
 
     /// Returns a sorted, deduplicated list of every tag used across all sessions.

@@ -112,21 +112,16 @@ pub fn get_panes_per_session() -> HashMap<String, u32> {
         return HashMap::new();
     }
     let mut map: HashMap<String, u32> = HashMap::new();
-    for line in out.stdout.trim().lines() {
-        if line.is_empty() {
-            continue;
-        }
+    for line in out.stdout.trim().lines().filter(|l| !l.is_empty()) {
         // rsplitn(2) from the right: last field is pane count (numeric)
         let mut parts = line.rsplitn(2, ':');
-        let panes: u32 = match parts.next().and_then(|p| p.parse().ok()) {
-            Some(n) => n,
-            None => continue,
+        let Some(panes) = parts.next().and_then(|p| p.parse::<u32>().ok()) else {
+            continue;
         };
-        let session_name = match parts.next() {
-            Some(n) => n.to_string(),
-            None => continue,
+        let Some(session_name) = parts.next() else {
+            continue;
         };
-        *map.entry(session_name).or_insert(0) += panes;
+        *map.entry(session_name.to_string()).or_insert(0) += panes;
     }
     map
 }
