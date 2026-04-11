@@ -10,6 +10,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -40,8 +41,14 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install tmux
 
+      - name: Start tmux server (macOS)
+        if: runner.os == 'macOS'
+        run: tmux start-server; sleep 1
+
       - name: Run tests
         run: cargo test
+        env:
+          TERM: xterm-256color
 
       - name: Build release binary
         run: cargo build --release
