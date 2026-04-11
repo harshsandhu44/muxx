@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0](https://github.com/harshsandhu44/muxx/compare/v1.8.3...v1.9.0) - 2026-04-11
+
+### Added
+
+- *(commands)* add version, last, new, config, export, import
+
+### Fixed
+
+- *(import)* formatting error in code
+
+### Other
+
+- document version, last, new, config, export, import commands
+
 ## [1.8.3](https://github.com/harshsandhu44/muxx/compare/v1.8.2...v1.8.3) - 2026-04-11
 
 ### Other
