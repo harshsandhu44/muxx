@@ -28,6 +28,7 @@ cd ~/Code/myapp && muxx
 - [Tags](#tags)
 - [Notes](#notes)
 - [Config](#config)
+- [Export & Import](#export--import)
 - [Shell completions](#shell-completions)
 - [Shell integration](#shell-integration)
 - [Troubleshooting](#troubleshooting)
@@ -103,14 +104,15 @@ muxx --version
 cd ~/Code/myapp
 muxx
 
-# Connect to any directory
+# Create a new session from a directory (shorthand for connect --cwd)
+muxx new ~/Code/myapp
+muxx new ~/Code/myapp --name work --cmd "npm run dev"
+
+# Connect to any directory (long form)
 muxx connect -c ~/Code/myapp
 
-# Give the session a custom name
-muxx connect -c ~/Code/myapp --name work
-
-# Run a command when the session is first created
-muxx connect -c ~/Code/myapp --cmd "npm run dev"
+# Re-attach to the last used session
+muxx last
 
 # Interactively pick a session with fzf (requires fzf in PATH)
 muxx pick
@@ -145,6 +147,18 @@ muxx kill myapp
 
 # Print the current session name (useful in scripts)
 muxx current
+
+# Show or edit the config file
+muxx config show
+muxx config edit
+
+# Export and restore tags and notes
+muxx export > backup.toml
+muxx import backup.toml
+
+# Print version
+muxx version
+muxx version --verbose   # includes OS and arch
 ```
 
 ---
@@ -155,7 +169,9 @@ muxx current
 | ------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------- |
 | `muxx`                                                                         |       | Connect to a session in the current directory                             |
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory              |
+| `muxx new <path> [--name <n>] [--cmd "<cmd>"] [--no-attach]`                  | `n`   | Create a session from a directory path (shorthand for `connect --cwd`)   |
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)           |
+| `muxx last`                                                                    | `l`   | Re-attach to the last used session                                        |
 | `muxx pick [--tag <tag>]...`                                                   | `p`   | Interactively pick a session using fzf; tags shown and searchable         |
 | `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, tags, notes  |
 | `muxx note <session> [text] [--clear]`                                         |       | Get or set a short note on a session                                      |
@@ -166,6 +182,10 @@ muxx current
 | `muxx gc`                                                                      |       | Remove tags and notes for sessions that no longer exist in tmux           |
 | `muxx current`                                                                 | `cur` | Print the current session name                                            |
 | `muxx doctor`                                                                  | `doc` | Validate environment and config; report any issues                        |
+| `muxx config <show\|edit\|path>`                                               |       | Inspect or edit the config file                                           |
+| `muxx export [path]`                                                           |       | Export tags and notes to a TOML file (stdout if no path given)            |
+| `muxx import <path> [--merge]`                                                 |       | Import tags and notes from a TOML file                                    |
+| `muxx version [--verbose]`                                                     |       | Print version; `--verbose` adds OS and architecture                       |
 | `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                             |
 
 ### `connect` vs `attach`
@@ -188,15 +208,24 @@ muxx c myapp              # alias
 muxx attach work
 muxx a work               # alias
 
+# Re-attach to the last used session
+muxx last
+muxx l                    # alias
+
+# Create a new session from a path (shorthand for connect --cwd)
+muxx new ~/Code/myapp
+muxx n ~/Code/myapp       # alias
+muxx new ~/Code/myapp --name work --cmd "npm run dev"
+
+# Create a session without attaching (useful in scripts)
+muxx new ~/Code/myapp --no-attach
+
 # Pick a session interactively with fzf
 muxx pick
 muxx p                    # alias
 
 # Pick only sessions tagged "work"
 muxx pick --tag work
-
-# Create a session without attaching (useful in scripts)
-muxx connect -c ~/Code/myapp --no-attach
 
 # List sessions as JSON (includes name, windows, attached, created, last_attached, tags, note)
 muxx list --json
@@ -210,6 +239,10 @@ muxx kill mysession --force
 # Rename a session (tags and notes are migrated automatically)
 muxx rename old-name new-name
 muxx rn old-name new-name   # alias
+
+# Print version
+muxx version
+muxx version --verbose    # also prints OS and arch (useful for bug reports)
 ```
 
 ---
@@ -345,6 +378,53 @@ See [`examples/config.toml`](examples/config.toml) for a fuller example.
 - `startup` is a shell command sent to the session's first pane on **first creation only**. Re-connecting to an existing session will not re-run it.
 - `--cmd` on the command line takes precedence over `startup` in the config.
 - The config path can be overridden with the `MUXX_CONFIG_PATH` environment variable.
+
+### Managing the config file
+
+```sh
+# Print the config file path and its current contents
+muxx config show
+
+# Open the config file in $EDITOR (creates it if it doesn't exist)
+muxx config edit
+
+# Print just the path (for scripting)
+muxx config path
+cat "$(muxx config path)"
+```
+
+---
+
+## Export & Import
+
+Tags and notes can be backed up and restored as a TOML file. Useful before wiping sessions, migrating machines, or sharing a session setup.
+
+```sh
+# Export to stdout (pipe-friendly)
+muxx export
+
+# Export to a file
+muxx export backup.toml
+
+# Import (replaces all existing tags and notes)
+muxx import backup.toml
+
+# Import and merge with existing data (deduplicates tags)
+muxx import backup.toml --merge
+```
+
+The export format is plain TOML with two top-level tables:
+
+```toml
+[tags]
+myapp = ["python", "work"]
+api = ["rust", "work"]
+
+[notes]
+myapp = "fixing the auth middleware"
+```
+
+Both tables are optional — an export file with only `[tags]` or only `[notes]` is valid for `muxx import`.
 
 ---
 

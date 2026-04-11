@@ -47,6 +47,8 @@ Each file exposes a single `pub fn run()` function:
 |---|---|
 | `connect.rs` | Creates or reattaches to a session; resolves alias → directory → session name |
 | `attach.rs` | Attaches or switches to an existing session; never creates |
+| `new.rs` | Thin wrapper around `connect` for `muxx new <path>`; equivalent to `connect --cwd` |
+| `last.rs` | Re-attaches to the last used session; delegates to `attach -` |
 | `list.rs` | Lists sessions as a table or `--json`; supports `--tag` filtering; shows TAGS and NOTE columns |
 | `pick.rs` | fzf-based session picker; shows tags alongside names; supports `--tag` pre-filter |
 | `note.rs` | Gets, sets, or clears a short free-form note on a session |
@@ -57,6 +59,10 @@ Each file exposes a single `pub fn run()` function:
 | `kill.rs` | Kills a session; guards against killing the current one without `--force` |
 | `current.rs` | Prints the current session name; errors if not in tmux |
 | `doctor.rs` | Validates tmux availability, config TOML, project directories, and duplicate session names |
+| `config.rs` | Manages the config file: `show` (path + contents), `edit` (opens `$EDITOR`), `path` (for scripting) |
+| `export.rs` | Serializes `TagsStore` + `NotesStore` to a TOML file or stdout |
+| `import.rs` | Deserializes a TOML export file; `--merge` merges into existing data, default replaces |
+| `version.rs` | Prints version from `CARGO_PKG_VERSION`; `--verbose` adds `std::env::consts::OS/ARCH` |
 | `completion.rs` | Emits a shell completion script via `clap_complete` with dynamic session-name values |
 
 ## Core layer (`src/core/`)
@@ -123,4 +129,4 @@ CI installs tmux before running `cargo test`. On macOS: `brew install tmux`. On 
 4. Dispatch from the match block in `cli::run()`
 5. Add integration tests in `tests/<name>.rs`
 
-Follow the pattern of an existing simple command (e.g. `current.rs`) to get the shape right before writing logic.
+Follow the pattern of an existing simple command (e.g. `version.rs` or `last.rs`) to get the shape right before writing logic. For commands with subcommands, follow `config.rs` + `ConfigAction` in `cli.rs`.
