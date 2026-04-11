@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.3](https://github.com/harshsandhu44/muxx/compare/v1.8.2...v1.8.3) - 2026-04-11
+
+### Other
+
+- *(commands)* replace process::exit with bail!, use gc() APIs, write! in status
+- *(core)* gc() returns removed names, HashSet lookups, TagsStore::gc(), let-else in tmux
+- *(output)* suppress ANSI codes when stdout/stderr is not a TTY
+
 ## [1.8.2](https://github.com/harshsandhu44/muxx/compare/v1.8.1...v1.8.2) - 2026-04-11
 
 ### Other
