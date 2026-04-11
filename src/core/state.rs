@@ -1,6 +1,13 @@
 use std::path::PathBuf;
 
 fn state_file() -> Option<PathBuf> {
+    if let Ok(p) = std::env::var("MUXX_STATE_PATH") {
+        let path = PathBuf::from(p);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).ok()?;
+        }
+        return Some(path);
+    }
     let dir = dirs::data_local_dir()
         .unwrap_or_else(|| PathBuf::from("~/.local/share"))
         .join("muxx");
