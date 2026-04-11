@@ -18,11 +18,11 @@ struct Import {
 }
 
 pub fn run(path: &str, merge: bool) -> Result<()> {
-    let raw = std::fs::read_to_string(path)
-        .map_err(|e| anyhow::anyhow!("failed to read {path}: {e}"))?;
+    let raw =
+        std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("failed to read {path}: {e}"))?;
 
-    let data: Import = toml::from_str(&raw)
-        .map_err(|e| anyhow::anyhow!("invalid TOML in {path}: {e}"))?;
+    let data: Import =
+        toml::from_str(&raw).map_err(|e| anyhow::anyhow!("invalid TOML in {path}: {e}"))?;
 
     let mut tags_store = if merge {
         load_tags()
