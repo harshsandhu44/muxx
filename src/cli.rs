@@ -142,6 +142,55 @@ pub enum Commands {
         #[arg(value_enum)]
         shell: Shell,
     },
+
+    /// Re-attach to the last used session
+    #[command(alias = "l")]
+    Last,
+
+    /// Create a new session from a directory path (shorthand for connect --cwd)
+    #[command(alias = "n")]
+    New {
+        /// Directory path for the new session
+        #[arg(value_hint = clap::ValueHint::DirPath)]
+        path: String,
+        /// Override the session name
+        #[arg(long)]
+        name: Option<String>,
+        /// Shell command to send on session creation
+        #[arg(long)]
+        cmd: Option<String>,
+        /// Create the session without attaching to it
+        #[arg(long = "no-attach")]
+        no_attach: bool,
+    },
+
+    /// Print version information
+    Version {
+        /// Show OS and architecture details
+        #[arg(long)]
+        verbose: bool,
+    },
+
+    /// Manage the muxx configuration file
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+
+    /// Export tags and notes to a TOML file
+    Export {
+        /// Output file path (omit to print to stdout)
+        path: Option<String>,
+    },
+
+    /// Import tags and notes from a TOML file
+    Import {
+        /// Input file path
+        path: String,
+        /// Merge with existing data instead of replacing
+        #[arg(long)]
+        merge: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -197,6 +246,16 @@ pub enum TagAction {
     },
 }
 
+#[derive(Subcommand)]
+pub enum ConfigAction {
+    /// Print the config file path and its contents
+    Show,
+    /// Open the config file in $EDITOR (falls back to vi)
+    Edit,
+    /// Print the config file path only (for scripting)
+    Path,
+}
+
 pub fn run() -> anyhow::Result<()> {
     clap_complete::CompleteEnv::with_factory(Cli::command).complete();
 
@@ -235,5 +294,16 @@ pub fn run() -> anyhow::Result<()> {
         Some(Commands::Completion { shell }) => {
             commands::completion::run(shell, &mut Cli::command())
         }
+        Some(Commands::Last) => commands::last::run(),
+        Some(Commands::New {
+            path,
+            name,
+            cmd,
+            no_attach,
+        }) => commands::new::run(&path, name.as_deref(), cmd.as_deref(), no_attach),
+        Some(Commands::Version { verbose }) => commands::version::run(verbose),
+        Some(Commands::Config { action }) => commands::config::run(action),
+        Some(Commands::Export { path }) => commands::export::run(path.as_deref()),
+        Some(Commands::Import { path, merge }) => commands::import::run(&path, merge),
     }
 }
