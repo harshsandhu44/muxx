@@ -53,9 +53,29 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 - A replacement for [sesh](https://github.com/joshmedeski/sesh) or [tmuxinator](https://github.com/tmuxinator/tmuxinator)
 - A pane/window orchestration tool
 
-**Planned:**
+---
 
-- [zoxide](https://github.com/ajeetdsouza/zoxide) integration — jump to frecency-ranked directories directly via `muxx`
+## Planned for April/May 2026
+
+### High impact
+
+- **Zoxide integration** — jump to frecency-ranked directories via `muxx`; resolves partial names through zoxide before falling back to config aliases
+- **Integration tests for v1.9.0 commands** — `version`, `last`, `new`, `config`, `export`, `import` are missing integration test coverage in `tests/`
+- **JSON output for more commands** — `tag ls`, `note`, and `status` lack `--json`; would make muxx fully scriptable without parsing plain text
+- **Session collision detection at creation time** — `doctor` detects name collisions retroactively; `connect` should fail early with a clear error instead of silently reusing the wrong session
+
+### Medium impact
+
+- **Bulk kill/tag** — accept multiple session args or a `--all-tagged <tag>` flag so you can kill or tag a set of sessions in one command
+- **Tag suggestions on `tag add`** — the existing tag store is loaded but never surfaced as suggestions; fzf over known tags when adding would reduce re-typing
+- **Additional `list` filters** — `--unattached`, `--older-than <duration>`, `--windows <n>` for more targeted GC workflows beyond tag filtering
+- **Auto-create config directories** — if `~/.config/muxx/` or `~/.local/share/muxx/` are missing, show a clear message or create them rather than surfacing an obscure I/O error
+- **`config add-alias` / `config remove-alias`** — add/remove project aliases from the CLI without opening `$EDITOR`; useful for scripts and dotfile bootstrapping
+
+### Low impact / internal
+
+- **Consolidate repeated tmux queries** — some commands call `list_sessions()`, `get_session_paths()`, and `get_panes_per_session()` separately in the same flow; batching reduces subprocess overhead
+- **Homebrew tap** — distribute a prebuilt bottle so users don't need Rust installed
 
 ---
 
@@ -92,7 +112,7 @@ cargo install --path .
 ### Verify
 
 ```sh
-muxx --version
+muxx version
 ```
 
 ---
@@ -169,11 +189,11 @@ muxx version --verbose   # includes OS and arch
 | ------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------- |
 | `muxx`                                                                         |       | Connect to a session in the current directory                             |
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory              |
-| `muxx new <path> [--name <n>] [--cmd "<cmd>"] [--no-attach]`                  | `n`   | Create a session from a directory path (shorthand for `connect --cwd`)   |
+| `muxx new <path> [--name <n>] [--cmd "<cmd>"] [--no-attach]`                   | `n`   | Create a session from a directory path (shorthand for `connect --cwd`)    |
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)           |
 | `muxx last`                                                                    | `l`   | Re-attach to the last used session                                        |
 | `muxx pick [--tag <tag>]...`                                                   | `p`   | Interactively pick a session using fzf; tags shown and searchable         |
-| `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, tags, notes  |
+| `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, tags, notes   |
 | `muxx note <session> [text] [--clear]`                                         |       | Get or set a short note on a session                                      |
 | `muxx status`                                                                  |       | Print current session name, tags, and note (for shell prompt integration) |
 | `muxx tag <subcommand>`                                                        | `t`   | Add, remove, delete, or list tags on sessions                             |
