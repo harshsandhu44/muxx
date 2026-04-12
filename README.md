@@ -74,13 +74,19 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 ### Low impact / internal
 
 - **Consolidate repeated tmux queries** — some commands call `list_sessions()`, `get_session_paths()`, and `get_panes_per_session()` separately in the same flow; batching reduces subprocess overhead
-- **Homebrew tap** — distribute a prebuilt bottle so users don't need Rust installed
 
 ---
 
 ## Installation
 
-### From crates.io (recommended)
+### Homebrew (macOS and Linux)
+
+```sh
+brew tap harshsandhu44/muxx
+brew install muxx
+```
+
+### From crates.io
 
 ```sh
 cargo install muxx
@@ -90,15 +96,21 @@ Requires Rust stable. On macOS, get Rust via [rustup](https://rustup.rs).
 
 ### Pre-built binaries
 
-Pre-built binaries for Linux and macOS are attached to each [GitHub release](https://github.com/harshsandhu44/muxx/releases). Download, make executable, and place in your `PATH`.
+Pre-built binaries for Linux and macOS are attached to each [GitHub release](https://github.com/harshsandhu44/muxx/releases).
 
 ```sh
-# Example for macOS arm64
-curl -L https://github.com/harshsandhu44/muxx/releases/latest/download/muxx-aarch64-apple-darwin \
-  -o /usr/local/bin/muxx && chmod +x /usr/local/bin/muxx
-```
+# macOS arm64
+curl -L https://github.com/harshsandhu44/muxx/releases/latest/download/muxx-aarch64-apple-darwin.tar.gz \
+  | tar -xz && mv muxx /usr/local/bin/
 
-> A Homebrew tap is planned for a future release.
+# macOS x86_64
+curl -L https://github.com/harshsandhu44/muxx/releases/latest/download/muxx-x86_64-apple-darwin.tar.gz \
+  | tar -xz && mv muxx /usr/local/bin/
+
+# Linux x86_64
+curl -L https://github.com/harshsandhu44/muxx/releases/latest/download/muxx-x86_64-unknown-linux-musl.tar.gz \
+  | tar -xz && mv muxx /usr/local/bin/
+```
 
 ### From source
 
