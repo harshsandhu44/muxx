@@ -64,7 +64,7 @@ jobs:
           tar -czf muxx-${{ matrix.target }}.tar.gz \
             -C target/${{ matrix.target }}/release muxx
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: muxx-${{ matrix.target }}
           path: muxx-${{ matrix.target }}.tar.gz
