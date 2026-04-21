@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2](https://github.com/harshsandhu44/muxx/compare/v1.9.1...v1.9.2) - 2026-04-12
+
+### Other
+
+- add homebrew tap installation instructions
+
 ## [1.9.1](https://github.com/harshsandhu44/muxx/compare/v1.9.0...v1.9.1) - 2026-04-12
 
 ### Other
