@@ -1,6 +1,6 @@
 [package]
 name = "muxx"
-version = "1.9.2"
+version = "1.9.3"
 description = "Minimal tmux session automation CLI"
 edition = "2021"
 license = "MIT"

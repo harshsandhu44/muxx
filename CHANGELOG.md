@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.3](https://github.com/harshsandhu44/muxx/compare/v1.9.2...v1.9.3) - 2026-04-27
+
+### Other
+
+- update Cargo.lock dependencies
+
 ## [1.9.2](https://github.com/harshsandhu44/muxx/compare/v1.9.1...v1.9.2) - 2026-04-12
 
 ### Other
