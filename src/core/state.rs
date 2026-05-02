@@ -9,7 +9,8 @@ fn state_file() -> Option<PathBuf> {
         return Some(path);
     }
     let dir = dirs::data_local_dir()
-        .unwrap_or_else(|| PathBuf::from("~/.local/share"))
+        .or_else(|| dirs::home_dir().map(|h| h.join(".local/share")))
+        .unwrap_or_else(|| PathBuf::from("/tmp"))
         .join("muxx");
     std::fs::create_dir_all(&dir).ok()?;
     Some(dir.join("last_session"))

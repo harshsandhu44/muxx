@@ -75,11 +75,18 @@ fn run_dir_based(
 
     if !existed {
         if !create_session(&session_name, &dir_str) {
-            bail!("failed to create session: {session_name}");
-        }
-        success(&format!("created: {session_name}"));
-        if let Some(cmd) = startup_cmd {
-            send_keys(&session_name, cmd);
+            // Another process may have created it concurrently — reuse if so.
+            if !has_session(&session_name) {
+                bail!("failed to create session: {session_name}");
+            }
+            info(&format!("reused: {session_name}"));
+        } else {
+            success(&format!("created: {session_name}"));
+            if let Some(cmd) = startup_cmd {
+                if !send_keys(&session_name, cmd) {
+                    warn(&format!("startup command may not have been sent: {cmd}"));
+                }
+            }
         }
     } else {
         let paths = get_session_paths();

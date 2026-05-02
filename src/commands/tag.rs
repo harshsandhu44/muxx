@@ -179,7 +179,13 @@ pub fn run(action: TagAction) -> Result<()> {
             // Strip the "* " / "  " visual prefix to get plain tag names.
             let new_tags: Vec<String> = selected
                 .iter()
-                .map(|line| line.trim_start_matches(['*', ' ']).trim().to_string())
+                .map(|line| {
+                    line.strip_prefix("* ")
+                        .or_else(|| line.strip_prefix("  "))
+                        .unwrap_or(line)
+                        .trim()
+                        .to_string()
+                })
                 .filter(|t| !t.is_empty())
                 .collect();
 
