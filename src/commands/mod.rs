@@ -7,6 +7,7 @@ pub mod doctor;
 pub mod export;
 pub mod gc;
 pub mod import;
+pub mod init;
 pub mod kill;
 pub mod last;
 pub mod list;
