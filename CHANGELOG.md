@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1](https://github.com/harshsandhu44/muxx/compare/v1.10.0...v1.10.1) - 2026-05-02
+
+### Fixed
+
+- handle concurrent session creation, silent send_keys failure, tilde fallback, and tag prefix over-stripping
+- *(session-name)* bail with clear error when sanitized name is empty
+
+### Other
+
+- update roadmap, troubleshooting, and test file list
+
 ## [1.10.0](https://github.com/harshsandhu44/muxx/compare/v1.9.3...v1.10.0) - 2026-05-02
 
 ### Added
