@@ -64,6 +64,13 @@ fn run_dir_based(
     let dir_str = dir.to_string_lossy();
     let session_name = resolve_session_name(&dir_str, name_override);
 
+    if session_name.is_empty() {
+        bail!(
+            "cannot derive a valid session name from \"{}\"",
+            name_override.unwrap_or(&dir_str)
+        );
+    }
+
     let existed = has_session(&session_name);
 
     if !existed {

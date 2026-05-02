@@ -16,7 +16,12 @@ pub fn run(from: &str, to: &str) -> Result<()> {
         bail!("session not found: {from}");
     }
 
+    let raw_to = to;
     let to = sanitize_session_name(to);
+
+    if to.is_empty() {
+        bail!("invalid name: \"{raw_to}\" produces an empty session name after sanitization");
+    }
 
     if has_session(&to) {
         bail!("session already exists: {to}");
