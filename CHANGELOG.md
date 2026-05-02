@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0](https://github.com/harshsandhu44/muxx/compare/v1.10.1...v1.11.0) - 2026-05-02
+
+### Added
+
+- add muxx init for interactive project onboarding ([#50](https://github.com/harshsandhu44/muxx/pull/50))
+
 ## [1.10.1](https://github.com/harshsandhu44/muxx/compare/v1.10.0...v1.10.1) - 2026-05-02
 
 ### Fixed
