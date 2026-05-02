@@ -55,13 +55,13 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 
 ---
 
-## Planned for April/May 2026 Release
+## Roadmap
 
 ### High impact
 
 - **Zoxide integration** — jump to frecency-ranked directories via `muxx`; resolves partial names through zoxide before falling back to config aliases
 - **JSON output for more commands** — `tag ls`, `note`, and `status` lack `--json`; would make muxx fully scriptable without parsing plain text
-- **Session collision detection at creation time** — `doctor` detects name collisions retroactively; `connect` should fail early with a clear error instead of silently reusing the wrong session
+- **Session collision detection at creation time** — `connect` already warns when an existing session's working directory doesn't match the requested one; a hard error on true name collisions (same name, different alias) is still pending
 
 ### Medium impact
 
@@ -506,6 +506,9 @@ All muxx output is plain text or `--json`, so it composes naturally with `fzf`, 
 
 Run `muxx doctor` first — it checks tmux availability, config validity, project directories, and session name collisions in one pass.
 
+**`cannot derive a valid session name from "..."`**
+muxx sanitizes the directory basename (or `--name` value) into a tmux-compatible name. If the result would be empty — for example, a path like `/` or a name consisting entirely of special characters — muxx exits with this error. Use `--name <name>` to provide an explicit session name.
+
 **`tmux: command not found`**
 muxx requires tmux in `PATH`. Install via your package manager (`brew install tmux`, `apt install tmux`, etc.).
 
@@ -514,6 +517,9 @@ Make sure the `source` / `eval` line is in your shell rc file and your shell was
 
 **Config parse error on startup**
 muxx validates `~/.config/muxx/config.toml` on load. Check for malformed TOML (e.g. missing quotes, bad key syntax). Run `muxx doctor` to see the exact parse error.
+
+**Warning: "session exists but its path is X, not Y"**
+When `connect` reuses an existing session whose working directory doesn't match the requested path, it prints a warning but still attaches. This happens when two different directories produce the same sanitized session name. Rename the session (`muxx rename`) or use `--name` to specify a distinct name.
 
 **Behavior differs inside vs outside tmux**
 Inside an existing session, muxx uses `switch-client`. Outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching.

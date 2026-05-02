@@ -107,8 +107,13 @@ tests/
   kill.rs          — integration tests for muxx kill
   rename.rs        — integration tests for muxx rename
   attach.rs        — integration tests for muxx attach
+  last.rs          — integration tests for muxx last
+  new.rs           — integration tests for muxx new
   current.rs       — integration tests for muxx current
   doctor.rs        — integration tests for muxx doctor (config, dirs, duplicates)
+  config.rs        — integration tests for muxx config (show/edit/path)
+  export.rs        — integration tests for muxx export and import
+  version.rs       — integration tests for muxx version
   pick.rs          — smoke tests for muxx pick (fzf requires a tty; full flow not tested in CI)
   completion.rs    — smoke tests for completion output
 ```
