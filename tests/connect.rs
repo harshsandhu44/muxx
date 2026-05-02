@@ -285,7 +285,7 @@ fn connect_unknown_session_name_fails() {
 }
 
 #[test]
-fn connect_warns_on_path_collision() {
+fn connect_errors_on_path_collision() {
     let dir1 = TempDir::new().unwrap();
     let dir2 = TempDir::new().unwrap();
     let session = "muxx-test-path-collision";
@@ -305,7 +305,7 @@ fn connect_warns_on_path_collision() {
         .success()
         .stdout(contains("created"));
 
-    // Connect with same name but different dir — should warn on stderr
+    // Connect with same name but different dir — must fail with a clear error
     let output = Command::cargo_bin("muxx")
         .unwrap()
         .args([
@@ -320,18 +320,61 @@ fn connect_warns_on_path_collision() {
         .unwrap();
 
     let stderr = String::from_utf8_lossy(&output.stderr);
-    let stdout = String::from_utf8_lossy(&output.stdout);
 
     let _ = std::process::Command::new("tmux")
         .args(["kill-session", "-t", session])
         .status();
 
-    assert!(output.status.success(), "should succeed; stderr: {stderr}");
-    assert!(stdout.contains("reused"), "should reuse; stdout: {stdout}");
+    assert!(!output.status.success(), "should fail on path collision");
     assert!(
-        stderr.contains("exists but its path is"),
-        "should warn about path mismatch; stderr: {stderr}"
+        stderr.contains("session name collision"),
+        "should report collision; stderr: {stderr}"
     );
+    assert!(
+        stderr.contains("--force"),
+        "should suggest --force; stderr: {stderr}"
+    );
+}
+
+#[test]
+fn connect_force_bypasses_path_collision() {
+    let dir1 = TempDir::new().unwrap();
+    let dir2 = TempDir::new().unwrap();
+    let session = "muxx-test-force-collision";
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            dir1.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("created"));
+
+    // --force should allow attaching to the existing session
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--force",
+            "--cwd",
+            dir2.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("reused"));
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
 }
 
 #[test]
