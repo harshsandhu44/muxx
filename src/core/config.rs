@@ -186,4 +186,109 @@ cwd = "/c"
         assert!(resolve_project(&cfg, "MyApp").is_none());
         assert!(resolve_project(&cfg, "myapp").is_some());
     }
+
+    #[test]
+    fn save_config_to_creates_file() {
+        let f = tempfile::NamedTempFile::new().unwrap();
+        let path = f.path().to_path_buf();
+
+        let mut cfg = MuxxConfig::default();
+        cfg.projects.insert(
+            "myapp".to_string(),
+            ProjectConfig {
+                cwd: "/tmp/myapp".to_string(),
+                startup: None,
+            },
+        );
+
+        save_config_to(&cfg, &path).unwrap();
+        assert!(path.exists());
+        let raw = std::fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("myapp"));
+        assert!(raw.contains("/tmp/myapp"));
+    }
+
+    #[test]
+    fn save_config_omits_startup_when_none() {
+        let f = tempfile::NamedTempFile::new().unwrap();
+
+        let mut cfg = MuxxConfig::default();
+        cfg.projects.insert(
+            "proj".to_string(),
+            ProjectConfig {
+                cwd: "/tmp/proj".to_string(),
+                startup: None,
+            },
+        );
+
+        save_config_to(&cfg, f.path()).unwrap();
+        let raw = std::fs::read_to_string(f.path()).unwrap();
+        assert!(
+            !raw.contains("startup"),
+            "startup key should not appear when value is None; got:\n{raw}"
+        );
+    }
+
+    #[test]
+    fn save_config_includes_startup_when_set() {
+        let f = tempfile::NamedTempFile::new().unwrap();
+
+        let mut cfg = MuxxConfig::default();
+        cfg.projects.insert(
+            "proj".to_string(),
+            ProjectConfig {
+                cwd: "/tmp/proj".to_string(),
+                startup: Some("npm run dev".to_string()),
+            },
+        );
+
+        save_config_to(&cfg, f.path()).unwrap();
+        let raw = std::fs::read_to_string(f.path()).unwrap();
+        assert!(raw.contains("npm run dev"));
+    }
+
+    #[test]
+    fn save_config_roundtrip() {
+        let f = tempfile::NamedTempFile::new().unwrap();
+
+        let mut cfg = MuxxConfig::default();
+        cfg.projects.insert(
+            "alpha".to_string(),
+            ProjectConfig {
+                cwd: "/tmp/alpha".to_string(),
+                startup: Some("make run".to_string()),
+            },
+        );
+        cfg.projects.insert(
+            "beta".to_string(),
+            ProjectConfig {
+                cwd: "/tmp/beta".to_string(),
+                startup: None,
+            },
+        );
+
+        save_config_to(&cfg, f.path()).unwrap();
+        let loaded = load_config_from(f.path());
+
+        let alpha = resolve_project(&loaded, "alpha").unwrap();
+        assert_eq!(alpha.cwd, "/tmp/alpha");
+        assert_eq!(alpha.startup.as_deref(), Some("make run"));
+
+        let beta = resolve_project(&loaded, "beta").unwrap();
+        assert_eq!(beta.cwd, "/tmp/beta");
+        assert!(beta.startup.is_none());
+    }
+
+    #[test]
+    fn save_config_creates_parent_directories() {
+        let base = tempfile::TempDir::new().unwrap();
+        let nested = base.path().join("a").join("b").join("config.toml");
+
+        let cfg = MuxxConfig::default();
+        save_config_to(&cfg, &nested).unwrap();
+        assert!(
+            nested.exists(),
+            "parent dirs should be created automatically"
+        );
+    }
 }
