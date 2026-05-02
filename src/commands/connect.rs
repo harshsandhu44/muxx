@@ -3,10 +3,13 @@ use anyhow::{bail, Result};
 use crate::core::{
     config::{load_config, resolve_project},
     env::{is_inside_tmux, resolve_dir},
-    output::{info, success},
+    output::{info, success, warn},
     session_name::resolve_session_name,
     state,
-    tmux::{attach_session, create_session, has_session, has_tmux, send_keys, switch_client},
+    tmux::{
+        attach_session, create_session, get_session_paths, has_session, has_tmux, send_keys,
+        switch_client,
+    },
 };
 
 pub fn run(
@@ -72,6 +75,22 @@ fn run_dir_based(
             send_keys(&session_name, cmd);
         }
     } else {
+        let paths = get_session_paths();
+        if let Some(existing_path) = paths.get(&session_name) {
+            let canon_existing = std::path::Path::new(existing_path)
+                .canonicalize()
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_else(|_| existing_path.clone());
+            let canon_dir = dir
+                .canonicalize()
+                .map(|p| p.to_string_lossy().into_owned())
+                .unwrap_or_else(|_| dir_str.to_string());
+            if canon_existing != canon_dir {
+                warn(&format!(
+                    "session \"{session_name}\" exists but its path is {existing_path}, not {dir_str}"
+                ));
+            }
+        }
         info(&format!("reused: {session_name}"));
     }
 

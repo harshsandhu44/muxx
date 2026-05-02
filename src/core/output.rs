@@ -31,3 +31,11 @@ pub fn hint(msg: &str) {
         println!("  {msg}");
     }
 }
+
+pub fn warn(msg: &str) {
+    if std::io::stderr().is_terminal() {
+        eprintln!("\x1b[33m!\x1b[0m {msg}");
+    } else {
+        eprintln!("! {msg}");
+    }
+}

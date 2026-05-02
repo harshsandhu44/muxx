@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use predicates::str::contains;
 use std::io::Write;
+use tempfile::TempDir;
 
 /// Connect to the current directory with --no-attach.
 /// This creates (or reuses) a session without attaching — safe to run in CI.
@@ -281,6 +282,101 @@ fn connect_unknown_session_name_fails() {
         .assert()
         .failure()
         .stderr(contains("session not found"));
+}
+
+#[test]
+fn connect_warns_on_path_collision() {
+    let dir1 = TempDir::new().unwrap();
+    let dir2 = TempDir::new().unwrap();
+    let session = "muxx-test-path-collision";
+
+    // Create session pointing at dir1
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            dir1.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("created"));
+
+    // Connect with same name but different dir — should warn on stderr
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            dir2.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
+
+    assert!(output.status.success(), "should succeed; stderr: {stderr}");
+    assert!(stdout.contains("reused"), "should reuse; stdout: {stdout}");
+    assert!(
+        stderr.contains("exists but its path is"),
+        "should warn about path mismatch; stderr: {stderr}"
+    );
+}
+
+#[test]
+fn connect_no_warning_when_path_matches() {
+    let dir = TempDir::new().unwrap();
+    let session = "muxx-test-path-match";
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            dir.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("created"));
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "connect",
+            "--no-attach",
+            "--cwd",
+            dir.path().to_str().unwrap(),
+            "--name",
+            session,
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
+
+    assert!(output.status.success());
+    assert!(
+        !stderr.contains("exists but its path is"),
+        "should not warn when path matches; stderr: {stderr}"
+    );
 }
 
 #[test]
