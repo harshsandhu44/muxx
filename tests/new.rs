@@ -167,3 +167,78 @@ fn new_reuses_existing_session() {
         .args(["kill-session", "-t", session])
         .status();
 }
+
+#[test]
+fn new_errors_on_path_collision() {
+    let dir1 = tempfile::TempDir::new().unwrap();
+    let dir2 = tempfile::TempDir::new().unwrap();
+    let session = "muxx-test-new-collision";
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "new",
+            dir1.path().to_str().unwrap(),
+            "--no-attach",
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("created"));
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "new",
+            dir2.path().to_str().unwrap(),
+            "--no-attach",
+            "--name",
+            session,
+        ])
+        .assert()
+        .failure()
+        .stderr(contains("session name collision"));
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
+}
+
+#[test]
+fn new_force_bypasses_path_collision() {
+    let dir1 = tempfile::TempDir::new().unwrap();
+    let dir2 = tempfile::TempDir::new().unwrap();
+    let session = "muxx-test-new-force-collision";
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "new",
+            dir1.path().to_str().unwrap(),
+            "--no-attach",
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("created"));
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args([
+            "new",
+            dir2.path().to_str().unwrap(),
+            "--no-attach",
+            "--force",
+            "--name",
+            session,
+        ])
+        .assert()
+        .success()
+        .stdout(contains("reused"));
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
+}

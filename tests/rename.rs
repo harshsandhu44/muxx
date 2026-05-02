@@ -18,6 +18,14 @@ fn kill(session: &str) {
         .status();
 }
 
+fn isolated_tags() -> tempfile::NamedTempFile {
+    tempfile::NamedTempFile::new().unwrap()
+}
+
+fn isolated_notes() -> tempfile::NamedTempFile {
+    tempfile::NamedTempFile::new().unwrap()
+}
+
 #[test]
 fn rename_nonexistent_session() {
     Command::cargo_bin("muxx")
@@ -133,4 +141,98 @@ fn rename_sanitizes_new_name() {
         .stdout(contains(new_sanitized));
 
     kill(new_sanitized);
+}
+
+#[test]
+fn rename_migrates_tags() {
+    let old = "muxx-test-rename-tags-old";
+    let new = "muxx-test-rename-tags-new";
+    let tags_file = isolated_tags();
+
+    kill(old);
+    kill(new);
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", old])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "add", old, "work", "rust"])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["rename", old, new])
+        .assert()
+        .success();
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_TAGS_PATH", tags_file.path())
+        .args(["tag", "ls", new])
+        .output()
+        .unwrap();
+
+    kill(new);
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    assert!(
+        stdout.contains("work"),
+        "tag 'work' should migrate to new name; got: {stdout}"
+    );
+    assert!(
+        stdout.contains("rust"),
+        "tag 'rust' should migrate to new name; got: {stdout}"
+    );
+}
+
+#[test]
+fn rename_migrates_notes() {
+    let old = "muxx-test-rename-notes-old";
+    let new = "muxx-test-rename-notes-new";
+    let notes_file = isolated_notes();
+
+    kill(old);
+    kill(new);
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", old])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_NOTES_PATH", notes_file.path())
+        .args(["note", old, "in progress: auth refactor"])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_NOTES_PATH", notes_file.path())
+        .args(["rename", old, new])
+        .assert()
+        .success();
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_NOTES_PATH", notes_file.path())
+        .args(["note", new])
+        .output()
+        .unwrap();
+
+    kill(new);
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    assert!(
+        stdout.contains("in progress: auth refactor"),
+        "note should migrate to new session name; got: {stdout}"
+    );
 }

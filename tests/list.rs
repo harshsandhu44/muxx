@@ -310,3 +310,47 @@ fn list_json_includes_tags_field() {
         "tags array should contain 'work', got: {tags:?}"
     );
 }
+
+#[test]
+fn list_json_includes_note() {
+    let session = "muxx-test-list-json-note";
+    let notes_file = tempfile::NamedTempFile::new().unwrap();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", session])
+        .assert()
+        .success();
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_NOTES_PATH", notes_file.path())
+        .args(["note", session, "refactoring auth"])
+        .assert()
+        .success();
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_NOTES_PATH", notes_file.path())
+        .args(["list", "--json"])
+        .output()
+        .unwrap();
+
+    kill(session);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let arr: serde_json::Value = serde_json::from_str(&stdout).expect("not valid JSON");
+    let arr = arr.as_array().expect("should be array");
+
+    let entry = arr
+        .iter()
+        .find(|s| s["name"].as_str() == Some(session))
+        .expect("session should appear in JSON output");
+
+    assert_eq!(
+        entry["note"].as_str(),
+        Some("refactoring auth"),
+        "note field should contain the set note"
+    );
+}
