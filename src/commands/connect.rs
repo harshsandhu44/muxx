@@ -18,6 +18,7 @@ pub fn run(
     name_override: Option<&str>,
     no_attach: bool,
     cmd_flag: Option<&str>,
+    force: bool,
 ) -> Result<()> {
     if !has_tmux() {
         bail!("tmux not found in PATH");
@@ -27,7 +28,7 @@ pub fn run(
 
     // --cwd flag: dir-based flow (old positional behavior)
     if cwd.is_some() {
-        return run_dir_based(cwd, name_override, no_attach, cmd_flag);
+        return run_dir_based(cwd, name_override, no_attach, cmd_flag, force);
     }
 
     // Session name or config alias provided
@@ -38,7 +39,13 @@ pub fn run(
             // Config alias: resolve the project's directory
             let startup = cmd_flag.or(proj.startup.as_deref());
             let effective_name = name_override.or(Some(target));
-            return run_dir_based(Some(proj.cwd.as_str()), effective_name, no_attach, startup);
+            return run_dir_based(
+                Some(proj.cwd.as_str()),
+                effective_name,
+                no_attach,
+                startup,
+                force,
+            );
         }
 
         // Existing tmux session by name
@@ -51,7 +58,7 @@ pub fn run(
     }
 
     // No args: fall back to current directory
-    run_dir_based(None, name_override, no_attach, cmd_flag)
+    run_dir_based(None, name_override, no_attach, cmd_flag, force)
 }
 
 fn run_dir_based(
@@ -59,6 +66,7 @@ fn run_dir_based(
     name_override: Option<&str>,
     no_attach: bool,
     startup_cmd: Option<&str>,
+    force: bool,
 ) -> Result<()> {
     let dir = resolve_dir(dir_target)?;
     let dir_str = dir.to_string_lossy();
@@ -99,10 +107,16 @@ fn run_dir_based(
                 .canonicalize()
                 .map(|p| p.to_string_lossy().into_owned())
                 .unwrap_or_else(|_| dir_str.to_string());
-            if canon_existing != canon_dir {
-                warn(&format!(
-                    "session \"{session_name}\" exists but its path is {existing_path}, not {dir_str}"
-                ));
+            if canon_existing != canon_dir && !force {
+                bail!(
+                    "session name collision: {session_name}\n\n  \
+                     Existing session path:  {existing_path}\n  \
+                     Requested path:         {dir_str}\n\n\
+                     Rename the new session:\n  \
+                     muxx connect {dir_str} --name <new-name>\n\n\
+                     Or attach to the existing session anyway:\n  \
+                     muxx connect {dir_str} --force"
+                );
             }
         }
         info(&format!("reused: {session_name}"));

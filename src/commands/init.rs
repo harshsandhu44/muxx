@@ -69,7 +69,7 @@ pub fn run(no_attach: bool) -> Result<()> {
     }
 
     if create_now {
-        crate::commands::connect::run(Some(&name), None, None, no_attach, None)?;
+        crate::commands::connect::run(Some(&name), None, None, no_attach, None, false)?;
     } else {
         hint(&format!("run `muxx {name}` to start your session"));
     }

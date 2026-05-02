@@ -58,6 +58,9 @@ pub enum Commands {
         /// Shell command to send on new session creation only
         #[arg(long)]
         cmd: Option<String>,
+        /// Attach to existing session even if its path differs from the requested path
+        #[arg(long)]
+        force: bool,
     },
 
     /// List all tmux sessions
@@ -162,6 +165,9 @@ pub enum Commands {
         /// Create the session without attaching to it
         #[arg(long = "no-attach")]
         no_attach: bool,
+        /// Attach to existing session even if its path differs from the requested path
+        #[arg(long)]
+        force: bool,
     },
 
     /// Print version information
@@ -269,7 +275,7 @@ pub fn run() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        None => commands::connect::run(None, None, None, false, None),
+        None => commands::connect::run(None, None, None, false, None, false),
         Some(Commands::Attach { session }) => commands::attach::run(&session),
         Some(Commands::Connect {
             session,
@@ -277,12 +283,14 @@ pub fn run() -> anyhow::Result<()> {
             name,
             no_attach,
             cmd,
+            force,
         }) => commands::connect::run(
             session.as_deref(),
             cwd.as_deref(),
             name.as_deref(),
             no_attach,
             cmd.as_deref(),
+            force,
         ),
         Some(Commands::List { json, tags }) => commands::list::run(json, &tags),
         Some(Commands::Kill { name, force }) => commands::kill::run(&name, force),
@@ -307,7 +315,8 @@ pub fn run() -> anyhow::Result<()> {
             name,
             cmd,
             no_attach,
-        }) => commands::new::run(&path, name.as_deref(), cmd.as_deref(), no_attach),
+            force,
+        }) => commands::new::run(&path, name.as_deref(), cmd.as_deref(), no_attach, force),
         Some(Commands::Version { verbose }) => commands::version::run(verbose),
         Some(Commands::Config { action }) => commands::config::run(action),
         Some(Commands::Init { no_attach }) => commands::init::run(no_attach),
