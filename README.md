@@ -25,6 +25,7 @@ cd ~/Code/myapp && muxx
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Commands](#commands)
+- [Project onboarding](#project-onboarding)
 - [Tags](#tags)
 - [Notes](#notes)
 - [Config](#config)
@@ -32,6 +33,7 @@ cd ~/Code/myapp && muxx
 - [Shell completions](#shell-completions)
 - [Shell integration](#shell-integration)
 - [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 
 ---
@@ -52,28 +54,6 @@ Most tmux session managers grow into full workspace orchestrators — TUIs, pane
 - A full TUI with pane/window layouts
 - A replacement for [sesh](https://github.com/joshmedeski/sesh) or [tmuxinator](https://github.com/tmuxinator/tmuxinator)
 - A pane/window orchestration tool
-
----
-
-## Roadmap
-
-### High impact
-
-- **Zoxide integration** — jump to frecency-ranked directories via `muxx`; resolves partial names through zoxide before falling back to config aliases
-- **JSON output for more commands** — `tag ls`, `note`, and `status` lack `--json`; would make muxx fully scriptable without parsing plain text
-- **Session collision detection at creation time** — `connect` already warns when an existing session's working directory doesn't match the requested one; a hard error on true name collisions (same name, different alias) is still pending
-
-### Medium impact
-
-- **Bulk kill/tag** — accept multiple session args or a `--all-tagged <tag>` flag so you can kill or tag a set of sessions in one command
-- **Tag suggestions on `tag add`** — the existing tag store is loaded but never surfaced as suggestions; fzf over known tags when adding would reduce re-typing
-- **Additional `list` filters** — `--unattached`, `--older-than <duration>`, `--windows <n>` for more targeted GC workflows beyond tag filtering
-- **Auto-create config directories** — if `~/.config/muxx/` or `~/.local/share/muxx/` are missing, show a clear message or create them rather than surfacing an obscure I/O error
-- **`config add-alias` / `config remove-alias`** — add/remove project aliases from the CLI without opening `$EDITOR`; useful for scripts and dotfile bootstrapping
-
-### Low impact / internal
-
-- **Consolidate repeated tmux queries** — some commands call `list_sessions()`, `get_session_paths()`, and `get_panes_per_session()` separately in the same flow; batching reduces subprocess overhead
 
 ---
 
@@ -134,6 +114,10 @@ muxx version
 # Connect to the current directory (create session if needed, attach if exists)
 cd ~/Code/myapp
 muxx
+
+# Register the current project interactively (alias, startup command, tags, optional session)
+cd ~/Code/myapp
+muxx init
 
 # Create a new session from a directory (shorthand for connect --cwd)
 muxx new ~/Code/myapp
@@ -199,6 +183,7 @@ muxx version --verbose   # includes OS and arch
 | Command                                                                        | Alias | Description                                                               |
 | ------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------- |
 | `muxx`                                                                         |       | Connect to a session in the current directory                             |
+| `muxx init [--no-attach]`                                                      |       | Register the current directory as a project alias; prompts for startup command, tags, and whether to create the session immediately |
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory              |
 | `muxx new <path> [--name <n>] [--cmd "<cmd>"] [--no-attach]`                   | `n`   | Create a session from a directory path (shorthand for `connect --cwd`)    |
 | `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)           |
@@ -275,6 +260,26 @@ muxx rn old-name new-name   # alias
 muxx version
 muxx version --verbose    # also prints OS and arch (useful for bug reports)
 ```
+
+---
+
+## Project onboarding
+
+Run `muxx init` inside any project directory to register it as a named config alias in one step:
+
+```sh
+cd ~/Code/myapp
+muxx init
+```
+
+It walks you through four prompts:
+
+1. **Project name** — defaults to the sanitized directory basename
+2. **Startup command** — optional shell command sent to the session on first creation (e.g. `npm run dev`)
+3. **Tags** — comma-separated list of tags applied immediately (e.g. `work, python`)
+4. **Create session now?** — defaults to yes; pass `--no-attach` to create without switching
+
+After confirming, muxx writes the alias to `~/.config/muxx/config.toml` and applies any tags. From then on, `muxx connect myapp` (or just `muxx myapp`) resolves the full path and runs the startup command automatically.
 
 ---
 
@@ -526,6 +531,28 @@ Inside an existing session, muxx uses `switch-client`. Outside tmux, it uses `at
 
 **Startup command did not run / ran unexpectedly**
 `startup` and `--cmd` only fire on **new session creation**. To force a re-run, kill the session first (`muxx kill <name>`) and reconnect.
+
+---
+
+## Roadmap
+
+### High impact
+
+- **Zoxide integration** — jump to frecency-ranked directories via `muxx`; resolves partial names through zoxide before falling back to config aliases
+- **JSON output for more commands** — `tag ls`, `note`, and `status` lack `--json`; would make muxx fully scriptable without parsing plain text
+- **Session collision detection at creation time** — `connect` already warns when an existing session's working directory doesn't match the requested one; a hard error on true name collisions (same name, different alias) is still pending
+
+### Medium impact
+
+- **Bulk kill/tag** — accept multiple session args or a `--all-tagged <tag>` flag so you can kill or tag a set of sessions in one command
+- **Tag suggestions on `tag add`** — the existing tag store is loaded but never surfaced as suggestions; fzf over known tags when adding would reduce re-typing
+- **Additional `list` filters** — `--unattached`, `--older-than <duration>`, `--windows <n>` for more targeted GC workflows beyond tag filtering
+- **Auto-create config directories** — if `~/.config/muxx/` or `~/.local/share/muxx/` are missing, show a clear message or create them rather than surfacing an obscure I/O error
+- **`config add-alias` / `config remove-alias`** — add/remove project aliases from the CLI without opening `$EDITOR`; useful for scripts and dotfile bootstrapping
+
+### Low impact / internal
+
+- **Consolidate repeated tmux queries** — some commands call `list_sessions()`, `get_session_paths()`, and `get_panes_per_session()` separately in the same flow; batching reduces subprocess overhead
 
 ---
 
