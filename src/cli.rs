@@ -177,6 +177,13 @@ pub enum Commands {
         action: ConfigAction,
     },
 
+    /// Interactively register the current project and optionally create a session
+    Init {
+        /// Register without creating a session
+        #[arg(long = "no-attach")]
+        no_attach: bool,
+    },
+
     /// Export tags and notes to a TOML file
     Export {
         /// Output file path (omit to print to stdout)
@@ -303,6 +310,7 @@ pub fn run() -> anyhow::Result<()> {
         }) => commands::new::run(&path, name.as_deref(), cmd.as_deref(), no_attach),
         Some(Commands::Version { verbose }) => commands::version::run(verbose),
         Some(Commands::Config { action }) => commands::config::run(action),
+        Some(Commands::Init { no_attach }) => commands::init::run(no_attach),
         Some(Commands::Export { path }) => commands::export::run(path.as_deref()),
         Some(Commands::Import { path, merge }) => commands::import::run(&path, merge),
     }
