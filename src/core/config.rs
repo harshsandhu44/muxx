@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     pub cwd: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub startup: Option<String>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct MuxxConfig {
     #[serde(default)]
     pub projects: HashMap<String, ProjectConfig>,
@@ -46,6 +47,19 @@ fn load_config_from(path: &std::path::Path) -> MuxxConfig {
             std::process::exit(1);
         }
     }
+}
+
+pub fn save_config(config: &MuxxConfig) -> anyhow::Result<()> {
+    save_config_to(config, &config_path())
+}
+
+pub fn save_config_to(config: &MuxxConfig, path: &std::path::Path) -> anyhow::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let toml = toml::to_string_pretty(config)?;
+    std::fs::write(path, toml)?;
+    Ok(())
 }
 
 pub fn resolve_project<'a>(config: &'a MuxxConfig, key: &str) -> Option<&'a ProjectConfig> {
