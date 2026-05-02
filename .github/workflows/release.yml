@@ -39,12 +39,18 @@ jobs:
       - name: Build release binary
         run: cargo build --release
 
+  # Creates/updates the release PR, or (when the PR is merged) tags and publishes.
+  # When a release is created, the tag is exposed as an output for downstream jobs.
+  # Note: tags pushed by GITHUB_TOKEN do not trigger push:tags workflows, so the
+  # build/upload/homebrew jobs live here rather than in build-release.yml.
   release-plz:
     needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      tag: ${{ steps.extract-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -54,7 +60,172 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run release-plz
+        id: release-plz
         uses: release-plz/action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Extract release tag
+        id: extract-tag
+        if: steps.release-plz.outputs.releases != '' && steps.release-plz.outputs.releases != '[]'
+        env:
+          RELEASES: ${{ steps.release-plz.outputs.releases }}
+        run: |
+          echo "tag=$(echo "$RELEASES" | jq -r '.[0].tag')" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: release-plz
+    if: needs.release-plz.outputs.tag != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release-plz.outputs.tag }}
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+      - name: Install musl-tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          tar -czf muxx-${{ matrix.target }}.tar.gz \
+            -C target/${{ matrix.target }}/release muxx
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: muxx-${{ matrix.target }}
+          path: muxx-${{ matrix.target }}.tar.gz
+
+  upload-release-assets:
+    name: Upload release assets
+    needs: [release-plz, build]
+    if: needs.release-plz.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release-plz.outputs.tag }}
+          files: artifacts/**/*.tar.gz
+
+  update-homebrew-formula:
+    name: Update Homebrew formula
+    needs: [release-plz, upload-release-assets]
+    if: needs.release-plz.outputs.tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set version vars
+        env:
+          TAG: ${{ needs.release-plz.outputs.tag }}
+        run: |
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
+      - name: Download release binaries
+        run: |
+          BASE="https://github.com/harshsandhu44/muxx/releases/download/${TAG_NAME}"
+          curl -fsSL "$BASE/muxx-aarch64-apple-darwin.tar.gz"      -o muxx-aarch64-apple-darwin.tar.gz
+          curl -fsSL "$BASE/muxx-x86_64-apple-darwin.tar.gz"       -o muxx-x86_64-apple-darwin.tar.gz
+          curl -fsSL "$BASE/muxx-x86_64-unknown-linux-musl.tar.gz" -o muxx-x86_64-unknown-linux-musl.tar.gz
+
+      - name: Compute SHA256 sums
+        run: |
+          echo "SHA256_AARCH64=$(sha256sum muxx-aarch64-apple-darwin.tar.gz      | awk '{print $1}')" >> $GITHUB_ENV
+          echo "SHA256_X86_MAC=$(sha256sum muxx-x86_64-apple-darwin.tar.gz       | awk '{print $1}')" >> $GITHUB_ENV
+          echo "SHA256_LINUX=$(sha256sum   muxx-x86_64-unknown-linux-musl.tar.gz | awk '{print $1}')" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v6
+        with:
+          repository: harshsandhu44/homebrew-muxx
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-muxx
+
+      - name: Rewrite formula
+        working-directory: homebrew-muxx
+        run: |
+          BASE="https://github.com/harshsandhu44/muxx/releases/download/${TAG_NAME}"
+          mkdir -p Formula
+          cat > Formula/muxx.rb << 'EOF'
+          # typed: false
+          # frozen_string_literal: true
+
+          class Muxx < Formula
+            desc "Minimal tmux session automation CLI"
+            homepage "https://github.com/harshsandhu44/muxx"
+            version "VERSION_PLACEHOLDER"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "BASE_PLACEHOLDER/muxx-aarch64-apple-darwin.tar.gz"
+                sha256 "SHA256_AARCH64_PLACEHOLDER"
+              else
+                url "BASE_PLACEHOLDER/muxx-x86_64-apple-darwin.tar.gz"
+                sha256 "SHA256_X86_MAC_PLACEHOLDER"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.intel?
+                url "BASE_PLACEHOLDER/muxx-x86_64-unknown-linux-musl.tar.gz"
+                sha256 "SHA256_LINUX_PLACEHOLDER"
+              end
+            end
+
+            def install
+              bin.install "muxx"
+            end
+
+            test do
+              system "#{bin}/muxx", "--version"
+            end
+          end
+          EOF
+          sed -i "s|VERSION_PLACEHOLDER|${VERSION}|g"               Formula/muxx.rb
+          sed -i "s|BASE_PLACEHOLDER|${BASE}|g"                     Formula/muxx.rb
+          sed -i "s|SHA256_AARCH64_PLACEHOLDER|${SHA256_AARCH64}|g" Formula/muxx.rb
+          sed -i "s|SHA256_X86_MAC_PLACEHOLDER|${SHA256_X86_MAC}|g" Formula/muxx.rb
+          sed -i "s|SHA256_LINUX_PLACEHOLDER|${SHA256_LINUX}|g"     Formula/muxx.rb
+
+      - name: Commit and push
+        working-directory: homebrew-muxx
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/muxx.rb
+          git commit -m "chore: update muxx to ${TAG_NAME}"
+          git push
