@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1](https://github.com/harshsandhu44/muxx/compare/v1.11.0...v1.11.1) - 2026-05-02
+
+### Fixed
+
+- *(connect)* turn path collision warning into hard error with --force escape
+
+### Other
+
+- add muxx init to quick start, command table, and dedicated section; move roadmap below troubleshooting
+- add integration tests for note, gc, status, and missing coverage
+- *(connect)* update collision test to assert error, add --force bypass test
+
 ## [1.11.0](https://github.com/harshsandhu44/muxx/compare/v1.10.1...v1.11.0) - 2026-05-02
 
 ### Added
