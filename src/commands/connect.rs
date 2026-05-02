@@ -34,7 +34,8 @@ pub fn run(
         if let Some(proj) = project {
             // Config alias: resolve the project's directory
             let startup = cmd_flag.or(proj.startup.as_deref());
-            return run_dir_based(Some(proj.cwd.as_str()), name_override, no_attach, startup);
+            let effective_name = name_override.or(Some(target));
+            return run_dir_based(Some(proj.cwd.as_str()), effective_name, no_attach, startup);
         }
 
         // Existing tmux session by name

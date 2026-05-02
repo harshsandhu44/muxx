@@ -218,6 +218,58 @@ fn connect_with_config_alias_startup_cmd() {
 }
 
 #[test]
+fn connect_config_alias_uses_alias_as_session_name() {
+    // The project dir has a different basename than the alias; without the fix
+    // the session would be named after the dir basename, not the alias.
+    let project_dir = std::env::temp_dir().join("muxx-alias-cwd-dir");
+    std::fs::create_dir_all(&project_dir).unwrap();
+
+    let alias = "my-alias-proj";
+
+    let mut config_file = tempfile::NamedTempFile::new().unwrap();
+    write!(
+        config_file,
+        "[projects.{}]\ncwd = \"{}\"\n",
+        alias,
+        project_dir.to_str().unwrap()
+    )
+    .unwrap();
+
+    // Connect via alias with no --name override
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .env("MUXX_CONFIG_PATH", config_file.path())
+        .args(["connect", "--no-attach", alias])
+        .assert()
+        .success()
+        .stdout(contains(alias));
+
+    // Session named after alias should exist, not after the dir basename
+    let alias_exists = std::process::Command::new("tmux")
+        .args(["has-session", "-t", alias])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+
+    let dir_session_exists = std::process::Command::new("tmux")
+        .args(["has-session", "-t", "muxx-alias-cwd-dir"])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", alias])
+        .status();
+    let _ = std::fs::remove_dir(&project_dir);
+
+    assert!(alias_exists, "session '{alias}' should exist");
+    assert!(
+        !dir_session_exists,
+        "session named after cwd basename should NOT exist"
+    );
+}
+
+#[test]
 fn connect_unknown_session_name_fails() {
     Command::cargo_bin("muxx")
         .unwrap()
