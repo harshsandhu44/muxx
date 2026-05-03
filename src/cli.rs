@@ -183,11 +183,26 @@ pub enum Commands {
         action: ConfigAction,
     },
 
-    /// Interactively register the current project and optionally create a session
+    /// Register the current project and optionally create a session
     Init {
+        /// Project name (default: sanitized directory name)
+        #[arg(long)]
+        name: Option<String>,
+        /// Startup command to run when the session is created
+        #[arg(long)]
+        startup: Option<String>,
+        /// Tags to assign; repeatable: --tag work --tag rust
+        #[arg(long = "tag")]
+        tags: Vec<String>,
         /// Register without creating a session
-        #[arg(long = "no-attach")]
+        #[arg(long)]
+        no_create: bool,
+        /// Create the session without attaching to it
+        #[arg(long)]
         no_attach: bool,
+        /// Overwrite an existing project config without warning
+        #[arg(long)]
+        force: bool,
     },
 
     /// Export tags and notes to a TOML file
@@ -319,7 +334,21 @@ pub fn run() -> anyhow::Result<()> {
         }) => commands::new::run(&path, name.as_deref(), cmd.as_deref(), no_attach, force),
         Some(Commands::Version { verbose }) => commands::version::run(verbose),
         Some(Commands::Config { action }) => commands::config::run(action),
-        Some(Commands::Init { no_attach }) => commands::init::run(no_attach),
+        Some(Commands::Init {
+            name,
+            startup,
+            tags,
+            no_create,
+            no_attach,
+            force,
+        }) => commands::init::run(
+            name.as_deref(),
+            startup.as_deref(),
+            &tags,
+            no_create,
+            no_attach,
+            force,
+        ),
         Some(Commands::Export { path }) => commands::export::run(path.as_deref()),
         Some(Commands::Import { path, merge }) => commands::import::run(&path, merge),
     }

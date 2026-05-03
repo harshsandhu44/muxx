@@ -9,7 +9,14 @@ use crate::core::{
     tags::{load_tags, save_tags},
 };
 
-pub fn run(no_attach: bool) -> Result<()> {
+pub fn run(
+    name_flag: Option<&str>,
+    startup_flag: Option<&str>,
+    tags_flag: &[String],
+    no_create: bool,
+    no_attach: bool,
+    force: bool,
+) -> Result<()> {
     let cwd = std::env::current_dir()?;
     let cwd_str = cwd.to_string_lossy().into_owned();
     let default_name = sanitize_session_name(&cwd_str);
@@ -18,34 +25,54 @@ pub fn run(no_attach: bool) -> Result<()> {
         bail!("cannot derive a project name from the current directory");
     }
 
-    let name_input = prompt("Project name", Some(&default_name))?;
-    let name = sanitize_session_name(if name_input.is_empty() {
-        &default_name
+    let name = if let Some(n) = name_flag {
+        sanitize_session_name(n)
     } else {
-        &name_input
-    });
+        let name_input = prompt("Project name", Some(&default_name))?;
+        sanitize_session_name(if name_input.is_empty() {
+            &default_name
+        } else {
+            &name_input
+        })
+    };
     if name.is_empty() {
         bail!("project name sanitizes to an empty string");
     }
 
-    let startup_raw = prompt("Startup command (optional)", None)?;
-    let startup = if startup_raw.is_empty() {
-        None
+    let startup = if let Some(s) = startup_flag {
+        Some(s.to_string())
     } else {
-        Some(startup_raw)
+        let startup_raw = prompt("Startup command (optional)", None)?;
+        if startup_raw.is_empty() {
+            None
+        } else {
+            Some(startup_raw)
+        }
     };
 
-    let tags_raw = prompt("Tags (comma-separated, optional)", None)?;
-    let tags: Vec<String> = tags_raw
-        .split(',')
-        .map(|t| t.trim().to_lowercase())
-        .filter(|t| !t.is_empty())
-        .collect();
+    let tags: Vec<String> = if !tags_flag.is_empty() {
+        tags_flag
+            .iter()
+            .map(|t| t.trim().to_lowercase())
+            .filter(|t| !t.is_empty())
+            .collect()
+    } else {
+        let tags_raw = prompt("Tags (comma-separated, optional)", None)?;
+        tags_raw
+            .split(',')
+            .map(|t| t.trim().to_lowercase())
+            .filter(|t| !t.is_empty())
+            .collect()
+    };
 
-    let create_now = prompt_bool("Create session now?", true)?;
+    let create_now = if no_create {
+        false
+    } else {
+        prompt_bool("Create session now?", true)?
+    };
 
     let mut config = load_config();
-    if config.projects.contains_key(&name) {
+    if config.projects.contains_key(&name) && !force {
         warn(&format!(
             "project \"{name}\" already exists in config — overwriting"
         ));

@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use predicates::prelude::PredicateBooleanExt;
 use predicates::str::contains;
 
 /// Return a `muxx` command with isolated config, tags, and notes stores.
@@ -345,4 +346,144 @@ fn init_prints_hint_when_session_not_created() {
         .assert()
         .success()
         .stdout(contains("hintproj"));
+}
+
+// ── non-interactive flag tests ──────────────────────────────────────────────
+
+#[test]
+fn init_name_flag_skips_name_prompt() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args(["init", "--name", "flagname", "--no-create"])
+        .write_stdin("\n\n")
+        .assert()
+        .success();
+
+    let raw = std::fs::read_to_string(config.path()).unwrap();
+    assert!(
+        raw.contains("[projects.flagname]"),
+        "config should use --name value; config:\n{raw}"
+    );
+}
+
+#[test]
+fn init_startup_flag_skips_startup_prompt() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "startupflag",
+            "--startup",
+            "cargo run",
+            "--no-create",
+        ])
+        .assert()
+        .success();
+
+    let raw = std::fs::read_to_string(config.path()).unwrap();
+    assert!(
+        raw.contains("cargo run"),
+        "config should contain --startup value; config:\n{raw}"
+    );
+}
+
+#[test]
+fn init_tag_flag_skips_tags_prompt() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags_file = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags_file.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "tagflag",
+            "--tag",
+            "rust",
+            "--tag",
+            "work",
+            "--no-create",
+        ])
+        .assert()
+        .success();
+
+    let raw = std::fs::read_to_string(tags_file.path()).unwrap();
+    assert!(raw.contains("rust"), "tags store should contain 'rust'");
+    assert!(raw.contains("work"), "tags store should contain 'work'");
+}
+
+#[test]
+fn init_no_create_skips_create_prompt() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    let session = "muxx-init-no-create-flag";
+
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args(["init", "--name", session, "--no-create"])
+        .assert()
+        .success();
+
+    let session_exists = std::process::Command::new("tmux")
+        .args(["has-session", "-t", session])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+
+    assert!(
+        !session_exists,
+        "--no-create should not create a tmux session"
+    );
+}
+
+#[test]
+fn init_force_suppresses_overwrite_warning() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    // First registration.
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "forceme",
+            "--startup",
+            "old",
+            "--no-create",
+        ])
+        .assert()
+        .success();
+
+    // Second registration with --force — no warning in output.
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "forceme",
+            "--startup",
+            "new",
+            "--no-create",
+            "--force",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("already exists").not());
+
+    let raw = std::fs::read_to_string(config.path()).unwrap();
+    assert!(raw.contains("new"), "config should reflect updated startup");
 }
