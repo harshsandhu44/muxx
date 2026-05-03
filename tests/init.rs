@@ -487,3 +487,115 @@ fn init_force_suppresses_overwrite_warning() {
     let raw = std::fs::read_to_string(config.path()).unwrap();
     assert!(raw.contains("new"), "config should reflect updated startup");
 }
+
+#[test]
+fn init_tag_flag_normalises_to_lowercase() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags_file = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags_file.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "lcflagproj",
+            "--tag",
+            "RUST",
+            "--tag",
+            "Work",
+            "--no-create",
+        ])
+        .assert()
+        .success();
+
+    let raw = std::fs::read_to_string(tags_file.path()).unwrap();
+    assert!(
+        raw.contains("rust"),
+        "--tag RUST should be stored as 'rust'"
+    );
+    assert!(
+        raw.contains("work"),
+        "--tag Work should be stored as 'work'"
+    );
+    assert!(!raw.contains("RUST"), "uppercase tag must not appear");
+    assert!(!raw.contains("Work"), "mixed-case tag must not appear");
+}
+
+#[test]
+fn init_name_flag_sanitizes_spaces_to_hyphens() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args(["init", "--name", "My Cool App", "--no-create"])
+        .assert()
+        .success();
+
+    let raw = std::fs::read_to_string(config.path()).unwrap();
+    assert!(
+        raw.contains("[projects.my-cool-app]"),
+        "--name with spaces should be sanitized to hyphens; config:\n{raw}"
+    );
+}
+
+#[test]
+fn init_no_create_hint_contains_project_name() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args(["init", "--name", "hintcheck", "--no-create"])
+        .assert()
+        .success()
+        .stdout(contains("hintcheck"));
+}
+
+#[test]
+fn init_name_flag_all_special_chars_fails() {
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags = tempfile::NamedTempFile::new().unwrap();
+
+    // "---" sanitizes to an empty string, which should produce an error.
+    isolated(config.path(), tags.path())
+        .current_dir(dir.path())
+        .args(["init", "--name", "---", "--no-create"])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn init_fully_non_interactive() {
+    // All four flag-driven fields provided — no stdin needed at all.
+    let dir = tempfile::TempDir::new().unwrap();
+    let config = tempfile::NamedTempFile::new().unwrap();
+    let tags_file = tempfile::NamedTempFile::new().unwrap();
+
+    isolated(config.path(), tags_file.path())
+        .current_dir(dir.path())
+        .args([
+            "init",
+            "--name",
+            "scriptedproj",
+            "--startup",
+            "make run",
+            "--tag",
+            "ci",
+            "--no-create",
+        ])
+        // no write_stdin — proves none of the four prompts are hit
+        .assert()
+        .success();
+
+    let cfg = std::fs::read_to_string(config.path()).unwrap();
+    assert!(cfg.contains("[projects.scriptedproj]"));
+    assert!(cfg.contains("make run"));
+
+    let tgs = std::fs::read_to_string(tags_file.path()).unwrap();
+    assert!(tgs.contains("ci"));
+}
