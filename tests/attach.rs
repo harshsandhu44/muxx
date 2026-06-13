@@ -167,9 +167,9 @@ fn attach_nonexistent_hints_list_command() {
 
     assert!(!output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    // The hint ("muxx list") is written to stdout via hint()
+    // The hint ("muxx ls") is written to stdout via hint()
     assert!(
-        stdout.contains("list"),
-        "expected a hint mentioning 'list', got stdout: {stdout}"
+        stdout.contains("ls"),
+        "expected a hint mentioning 'ls', got stdout: {stdout}"
     );
 }

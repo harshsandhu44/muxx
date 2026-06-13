@@ -113,9 +113,9 @@ fn run_dir_based(
                      Existing session path:  {existing_path}\n  \
                      Requested path:         {dir_str}\n\n\
                      Rename the new session:\n  \
-                     muxx connect {dir_str} --name <new-name>\n\n\
+                     muxx --cwd {dir_str} --name <new-name>\n\n\
                      Or attach to the existing session anyway:\n  \
-                     muxx connect {dir_str} --force"
+                     muxx --cwd {dir_str} --force"
                 );
             }
         }
