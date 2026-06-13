@@ -180,29 +180,32 @@ muxx version --verbose   # includes OS and arch
 
 ## Commands
 
-| Command                                                                        | Alias | Description                                                               |
-| ------------------------------------------------------------------------------ | ----- | ------------------------------------------------------------------------- |
-| `muxx`                                                                         |       | Connect to a session in the current directory                             |
-| `muxx init [--no-attach]`                                                      |       | Register the current directory as a project alias; prompts for startup command, tags, and whether to create the session immediately |
-| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"]` | `c`   | Attach to an existing session or create one from a directory              |
-| `muxx new <path> [--name <n>] [--cmd "<cmd>"] [--no-attach]`                   | `n`   | Create a session from a directory path (shorthand for `connect --cwd`)    |
-| `muxx attach <name>`                                                           | `a`   | Attach or switch to an existing session by name (never creates)           |
-| `muxx last`                                                                    | `l`   | Re-attach to the last used session                                        |
-| `muxx pick [--tag <tag>]...`                                                   | `p`   | Interactively pick a session using fzf; tags shown and searchable         |
-| `muxx list [--json] [--tag <tag>]...`                                          | `ls`  | List sessions with windows, panes, last seen, CWD, startup, tags, notes   |
-| `muxx note <session> [text] [--clear]`                                         |       | Get or set a short note on a session                                      |
-| `muxx status`                                                                  |       | Print current session name, tags, and note (for shell prompt integration) |
-| `muxx tag <subcommand>`                                                        | `t`   | Add, remove, delete, or list tags on sessions                             |
-| `muxx kill <name> [--force]`                                                   | `k`   | Kill a session by name                                                    |
-| `muxx rename <from> <to>`                                                      | `rn`  | Rename an existing session (tags and notes are migrated automatically)    |
-| `muxx gc`                                                                      |       | Remove tags and notes for sessions that no longer exist in tmux           |
-| `muxx current`                                                                 | `cur` | Print the current session name                                            |
-| `muxx doctor`                                                                  | `doc` | Validate environment and config; report any issues                        |
-| `muxx config <show\|edit\|path>`                                               |       | Inspect or edit the config file                                           |
-| `muxx export [path]`                                                           |       | Export tags and notes to a TOML file (stdout if no path given)            |
-| `muxx import <path> [--merge]`                                                 |       | Import tags and notes from a TOML file                                    |
-| `muxx version [--verbose]`                                                     |       | Print version; `--verbose` adds OS and architecture                       |
-| `muxx completion <bash\|zsh\|fish>`                                            |       | Print shell completion script                                             |
+Session verbs live under `muxx session <verb>`, with short top-level shortcuts
+for the commands you run most. The older flat spellings (`muxx new`,
+`muxx attach`, `muxx rename`, `muxx note`, `muxx export`, `muxx import`) still
+work as hidden aliases, so existing scripts and muscle memory are unaffected.
+
+A global `--no-color` flag disables colored output (the `NO_COLOR` env var is
+also honored).
+
+| Command                                                                                 | Alias | Description                                                               |
+| --------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------- |
+| `muxx`                                                                                   |       | Connect to a session for the current directory                            |
+| `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"] [--force]` | `c`   | Attach to an existing session/alias, or create one from a directory (`-c`) |
+| `muxx ls [--json] [--tag <tag>]...`                                                      |       | List sessions (shortcut for `session ls`)                                 |
+| `muxx kill <name> [--force]`                                                             | `k`   | Kill a session (shortcut for `session kill`)                              |
+| `muxx pick [--tag <tag>]...`                                                             | `p`   | Interactively pick a session with fzf (shortcut for `session pick`)       |
+| `muxx last`                                                                              | `l`   | Re-attach to the last used session (shortcut for `session last`)          |
+| `muxx session <ls\|kill\|rename\|pick\|last\|new\|note>`                                 | `s`   | Manage sessions — canonical home for session verbs                        |
+| `muxx tag <add\|rm\|delete\|edit\|clear\|ls>`                                            | `t`   | Add, remove, delete, edit, or list tags on sessions                       |
+| `muxx init [--no-attach]`                                                                |       | Register the current directory as a project alias; prompts for startup command, tags, and whether to create the session immediately |
+| `muxx current`                                                                           | `cur` | Print the current session name (for shell prompt integration)            |
+| `muxx status`                                                                            |       | Print current session name, tags, and note (for shell prompt integration) |
+| `muxx gc`                                                                                |       | Remove tags and notes for sessions that no longer exist in tmux           |
+| `muxx doctor`                                                                            | `doc` | Validate environment and config; report any issues                        |
+| `muxx config <show\|edit\|path\|export\|import>`                                         |       | Inspect/edit the config file; export or import tags & notes               |
+| `muxx completion <bash\|zsh\|fish>`                                                      |       | Print shell completion setup for your shell                               |
+| `muxx version [--verbose]`                                                               |       | Print version; `--verbose` adds OS and architecture                       |
 
 ### `connect` vs `attach`
 
@@ -466,7 +469,13 @@ Both tables are optional — an export file with only `[tags]` or only `[notes]`
 
 ## Shell completions
 
-muxx supports dynamic completions — session names are completed live from the running tmux server.
+muxx ships dynamic, live completions. As you type, it completes session names
+(from the running tmux server), config aliases, and tag names — `tag rm` even
+offers only the tags the named session actually has. In zsh and fish each
+candidate carries an inline description (session state, alias target).
+
+The setup below registers muxx's completion engine; the commands run muxx live
+on each `<TAB>`, so completions always reflect current state.
 
 ### zsh
 

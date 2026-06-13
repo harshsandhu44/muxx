@@ -37,6 +37,10 @@ argv
 
 Uses [clap](https://docs.rs/clap) with derive macros. Defines the `Cli` struct and `Commands` enum (one variant per subcommand). `run()` parses args and dispatches to the appropriate command module.
 
+Session verbs have a canonical home under the `session` noun (`SessionAction` enum, dispatched by `dispatch_session`), with short top-level shortcuts (`ls`, `kill`, `pick`, `last`) and bare `muxx`/`connect` for the hot path. Older flat spellings (`new`, `attach`, `rename`, `note`, `export`, `import`) remain as `#[command(hide = true)]` aliases that dispatch to the same `run()` functions — kept for back-compat, omitted from `--help`. A global `--no-color` flag (also honoring `NO_COLOR`) is wired to `core::output::set_no_color`.
+
+Completion uses clap_complete's dynamic engine (`CompleteEnv`, initialized at the top of `run()`). `ArgValueCompleter`s provide live candidates with inline descriptions: `complete_connect_targets` (sessions + config aliases), `complete_all_tags`, and the context-aware `complete_session_tags` (only a session's own tags, for `tag rm`/`clear`).
+
 When no subcommand is given, it defaults to `connect` with no arguments (current directory behavior).
 
 ## Command modules (`src/commands/`)
@@ -63,7 +67,7 @@ Each file exposes a single `pub fn run()` function:
 | `export.rs` | Serializes `TagsStore` + `NotesStore` to a TOML file or stdout |
 | `import.rs` | Deserializes a TOML export file; `--merge` merges into existing data, default replaces |
 | `version.rs` | Prints version from `CARGO_PKG_VERSION`; `--verbose` adds `std::env::consts::OS/ARCH` |
-| `completion.rs` | Emits a shell completion script via `clap_complete` with dynamic session-name values |
+| `completion.rs` | Emits the registration line that bootstraps `clap_complete`'s dynamic completion engine for the chosen shell |
 
 ## Core layer (`src/core/`)
 
@@ -78,7 +82,7 @@ Utilities shared across command modules:
 | `tmux.rs` | Wraps tmux CLI calls; `run()` captures stdout, `run_interactive()` inherits stdio for attach/switch |
 | `session_name.rs` | Sanitizes arbitrary strings into valid tmux session names (lowercase, hyphens) |
 | `state.rs` | Persists the last-attached session name to `~/.local/share/muxx/last_session` |
-| `output.rs` | ANSI-colored print helpers (`success`, `info`, `error`, `hint`) |
+| `output.rs` | ANSI-colored print helpers (`success`, `info`, `warn`, `error`, `hint`); color is gated by TTY detection, `NO_COLOR`, and the `--no-color` flag (`set_no_color`/`stdout_color`) |
 | `fuzzy.rs` | Two-pass substring/subsequence matching used for fuzzy session lookup |
 
 ## Pure vs shell-dependent
@@ -115,6 +119,7 @@ tests/
   export.rs        — integration tests for muxx export and import
   version.rs       — integration tests for muxx version
   pick.rs          — smoke tests for muxx pick (fzf requires a tty; full flow not tested in CI)
+  session.rs       — integration tests for the `session` noun group, hidden aliases, and --no-color
   completion.rs    — smoke tests for completion output
 ```
 
