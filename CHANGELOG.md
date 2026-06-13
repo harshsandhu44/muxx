@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.3](https://github.com/harshsandhu44/muxx/compare/v1.12.2...v1.12.3) - 2026-06-13
+
+### Other
+
+- session command group, structured completions, consistent color ([#62](https://github.com/harshsandhu44/muxx/pull/62))
+
 ## [1.12.2](https://github.com/harshsandhu44/muxx/compare/v1.12.1...v1.12.2) - 2026-06-13
 
 ### Other
