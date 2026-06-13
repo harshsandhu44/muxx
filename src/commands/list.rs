@@ -6,7 +6,7 @@ use serde::Serialize;
 use crate::core::{
     config::load_config,
     notes::load_notes,
-    output::hint,
+    output::{hint, stdout_color},
     tags::load_tags,
     tmux::{get_panes_per_session, get_session_paths, has_tmux, list_sessions, TmuxSession},
 };
@@ -135,11 +135,18 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
     // "STARTUP" header is 7 chars; symbol value is 1 char — pad explicitly.
     let startup_w = 7_usize;
 
+    let color = stdout_color();
+
     // Header
-    println!(
-        "\x1b[2m{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {:<state_w$}  {:<cwd_w$}  {:<startup_w$}  {:<tags_w$}  NOTE\x1b[0m",
+    let header = format!(
+        "{:<name_w$}  {:<wins_w$}  {:<panes_w$}  {:<age_w$}  {:<state_w$}  {:<cwd_w$}  {:<startup_w$}  {:<tags_w$}  NOTE",
         "NAME", "WINS", "PANES", "LAST SEEN", "STATE", "CWD", "STARTUP", "TAGS",
     );
+    if color {
+        println!("\x1b[2m{header}\x1b[0m");
+    } else {
+        println!("{header}");
+    }
     // Separator
     let total = name_w
         + 2
@@ -158,17 +165,30 @@ pub fn run(json: bool, filter_tags: &[String]) -> Result<()> {
         + tags_w
         + 2
         + note_w;
-    println!("\x1b[2m{}\x1b[0m", "─".repeat(total));
+    let sep = "─".repeat(total);
+    if color {
+        println!("\x1b[2m{sep}\x1b[0m");
+    } else {
+        println!("{sep}");
+    }
 
     // Rows
     for r in &rows {
         let state_plain = if r.attached { "attached" } else { "detached" };
-        let state_colored = if r.attached {
+        let state_colored = if !color {
+            state_plain.to_string()
+        } else if r.attached {
             format!("\x1b[32m{state_plain}\x1b[0m")
         } else {
             format!("\x1b[2m{state_plain}\x1b[0m")
         };
-        let startup_sym = if r.startup {
+        let startup_sym = if !color {
+            if r.startup {
+                "✓"
+            } else {
+                "-"
+            }
+        } else if r.startup {
             "\x1b[32m✓\x1b[0m"
         } else {
             "\x1b[2m-\x1b[0m"

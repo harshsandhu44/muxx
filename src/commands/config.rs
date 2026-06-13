@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 
 use crate::cli::ConfigAction;
+use crate::commands::{export, import};
 use crate::core::{config::config_path, output::hint};
 
 pub fn run(action: ConfigAction) -> Result<()> {
@@ -8,6 +9,8 @@ pub fn run(action: ConfigAction) -> Result<()> {
         ConfigAction::Show => show(),
         ConfigAction::Edit => edit(),
         ConfigAction::Path => path(),
+        ConfigAction::Export { path } => export::run(path.as_deref()),
+        ConfigAction::Import { path, merge } => import::run(&path, merge),
     }
 }
 

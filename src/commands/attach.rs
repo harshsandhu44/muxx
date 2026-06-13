@@ -22,7 +22,7 @@ pub fn run(session: &str) -> Result<()> {
 
     match matches.len() {
         0 => {
-            output::hint("run 'muxx list' to see active sessions");
+            output::hint("run 'muxx ls' to see active sessions");
             bail!("session '{}' does not exist", session);
         }
         1 => {
@@ -68,7 +68,7 @@ fn attach_last() -> Result<()> {
     match state::load_last_session() {
         Some(name) => do_attach(&name),
         None => {
-            output::hint("use 'muxx attach <name>' to attach to a session first");
+            output::hint("use 'muxx <name>' to attach to a session first");
             bail!("no last session recorded");
         }
     }
