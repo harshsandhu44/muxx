@@ -75,7 +75,7 @@ Utilities shared across command modules:
 
 | File | Responsibility |
 |---|---|
-| `config.rs` | Loads `~/.config/muxx/config.toml`; resolves project aliases to `ProjectConfig` |
+| `config.rs` | Loads `~/.config/muxx/config.toml`; resolves project aliases to `ProjectConfig`; holds `ResurrectConfig` (resurrect integration toggle + save-script override) |
 | `tags.rs` | Loads and saves `~/.config/muxx/tags.toml`; `TagsStore` maps session names to sorted tag lists; `delete_tag` removes a tag globally across all sessions |
 | `notes.rs` | Loads and saves `~/.config/muxx/notes.toml`; `NotesStore` maps session names to a single string note |
 | `env.rs` | `is_inside_tmux()`, home expansion, directory resolution |
@@ -84,6 +84,7 @@ Utilities shared across command modules:
 | `state.rs` | Persists the last-attached session name to `~/.local/share/muxx/last_session` |
 | `output.rs` | ANSI-colored print helpers (`success`, `info`, `warn`, `error`, `hint`); color is gated by TTY detection, `NO_COLOR`, and the `--no-color` flag (`set_no_color`/`stdout_color`) |
 | `fuzzy.rs` | Two-pass substring/subsequence matching used for fuzzy session lookup |
+| `resurrect.rs` | Re-runs tmux-resurrect's `save.sh` after session mutations so its saved snapshot stays in sync (issue #60); locates the script via `MUXX_RESURRECT_SAVE_SCRIPT`, config override, or probed plugin paths |
 
 ## Pure vs shell-dependent
 
