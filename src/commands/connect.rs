@@ -4,6 +4,7 @@ use crate::core::{
     config::{load_config, resolve_project},
     env::{is_inside_tmux, resolve_dir},
     output::{info, success, warn},
+    resurrect,
     session_name::resolve_session_name,
     state,
     tmux::{
@@ -80,6 +81,7 @@ fn run_dir_based(
     }
 
     let existed = has_session(&session_name);
+    let mut created = false;
 
     if !existed {
         if !create_session(&session_name, &dir_str) {
@@ -89,6 +91,7 @@ fn run_dir_based(
             }
             info(&format!("reused: {session_name}"));
         } else {
+            created = true;
             success(&format!("created: {session_name}"));
             if let Some(cmd) = startup_cmd {
                 if !send_keys(&session_name, cmd) {
@@ -120,6 +123,11 @@ fn run_dir_based(
             }
         }
         info(&format!("reused: {session_name}"));
+    }
+
+    // Refresh resurrect's snapshot before attaching (attach hijacks the terminal).
+    if created {
+        resurrect::save_snapshot();
     }
 
     do_attach(&session_name, no_attach)

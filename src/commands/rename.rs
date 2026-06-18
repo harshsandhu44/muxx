@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 
 use crate::core::{
     output::success,
+    resurrect,
     session_name::sanitize_session_name,
     state,
     tmux::{has_session, has_tmux, rename_session},
@@ -42,6 +43,8 @@ pub fn run(from: &str, to: &str) -> Result<()> {
     let mut notes_store = crate::core::notes::load_notes();
     notes_store.rename_session(from, &to);
     let _ = crate::core::notes::save_notes(&notes_store);
+
+    resurrect::save_snapshot();
 
     success(&format!("renamed: {from} -> {to}"));
     Ok(())

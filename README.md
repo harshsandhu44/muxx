@@ -29,6 +29,7 @@ cd ~/Code/myapp && muxx
 - [Tags](#tags)
 - [Notes](#notes)
 - [Config](#config)
+- [tmux-resurrect / tmux-continuum](#tmux-resurrect--tmux-continuum)
 - [Export & Import](#export--import)
 - [Shell completions](#shell-completions)
 - [Shell integration](#shell-integration)
@@ -431,6 +432,30 @@ muxx config edit
 muxx config path
 cat "$(muxx config path)"
 ```
+
+---
+
+## tmux-resurrect / tmux-continuum
+
+If you use [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect) (optionally with [tmux-continuum](https://github.com/tmux-plugins/tmux-continuum)), muxx keeps their saved snapshot in sync with reality.
+
+Previously, killing a session with `muxx kill` left it in resurrect's saved snapshot, so it would come back at the next restore (a tmux server restart with continuum, or a manual `prefix + Ctrl-r`). muxx now re-runs resurrect's own `save.sh` after any session mutation — `kill`, `new`/`connect` (on creation), `rename`, and `gc` — so the snapshot always reflects the live session list.
+
+**How it works:**
+
+- Enabled automatically when tmux-resurrect is detected. No setup required.
+- A re-save is silent on success and never fails your command; if the save script is found but errors, muxx prints a non-fatal warning.
+- muxx probes the usual install locations (`$TMUX_PLUGIN_MANAGER_PATH`, `~/.tmux/plugins`, `~/.config/tmux/plugins`). Run `muxx doctor` to confirm detection.
+
+Disable it or point at a non-standard install via config:
+
+```toml
+[resurrect]
+enabled = true                 # set false to turn the integration off
+save_script = "~/.tmux/plugins/tmux-resurrect/scripts/save.sh"  # optional override
+```
+
+The save script can also be overridden with the `MUXX_RESURRECT_SAVE_SCRIPT` environment variable (takes precedence over config).
 
 ---
 

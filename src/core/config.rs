@@ -10,10 +10,35 @@ pub struct ProjectConfig {
     pub startup: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ResurrectConfig {
+    /// Whether muxx refreshes tmux-resurrect's snapshot after mutating sessions.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Explicit path to resurrect's `save.sh` for non-standard installs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub save_script: Option<String>,
+}
+
+impl Default for ResurrectConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            save_script: None,
+        }
+    }
+}
+
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct MuxxConfig {
     #[serde(default)]
     pub projects: HashMap<String, ProjectConfig>,
+    #[serde(default)]
+    pub resurrect: ResurrectConfig,
 }
 
 pub fn config_path() -> PathBuf {
@@ -277,6 +302,27 @@ cwd = "/c"
         let beta = resolve_project(&loaded, "beta").unwrap();
         assert_eq!(beta.cwd, "/tmp/beta");
         assert!(beta.startup.is_none());
+    }
+
+    #[test]
+    fn resurrect_defaults_to_enabled_when_section_absent() {
+        let cfg: MuxxConfig = toml::from_str("[projects.foo]\ncwd = \"/tmp/foo\"\n").unwrap();
+        assert!(cfg.resurrect.enabled);
+        assert!(cfg.resurrect.save_script.is_none());
+    }
+
+    #[test]
+    fn resurrect_can_be_disabled() {
+        let cfg: MuxxConfig = toml::from_str("[resurrect]\nenabled = false\n").unwrap();
+        assert!(!cfg.resurrect.enabled);
+    }
+
+    #[test]
+    fn resurrect_save_script_override_parses() {
+        let cfg: MuxxConfig =
+            toml::from_str("[resurrect]\nsave_script = \"/opt/save.sh\"\n").unwrap();
+        assert!(cfg.resurrect.enabled);
+        assert_eq!(cfg.resurrect.save_script.as_deref(), Some("/opt/save.sh"));
     }
 
     #[test]

@@ -4,9 +4,10 @@ use std::path::Path;
 use anyhow::Result;
 
 use crate::core::{
-    config::{config_path, MuxxConfig},
+    config::{config_path, load_config, MuxxConfig},
     env::expand_home,
     output::{error, hint, success},
+    resurrect,
     session_name::sanitize_session_name,
     tmux::has_tmux,
 };
@@ -76,6 +77,22 @@ pub fn run() -> Result<()> {
                     }
                 }
             },
+        }
+    }
+
+    // --- Check 5: tmux-resurrect integration ---
+    let cfg = load_config();
+    if !cfg.resurrect.enabled {
+        hint("tmux-resurrect integration disabled in config");
+    } else if let Some(script) = resurrect::resolve_save_script() {
+        success(&format!("tmux-resurrect detected: {}", script.display()));
+    } else {
+        hint("tmux-resurrect not detected — session save/restore sync inactive");
+    }
+    if let Some(s) = cfg.resurrect.save_script.as_deref() {
+        if !Path::new(&expand_home(s)).is_file() {
+            error(&format!("resurrect save_script not found: {s}"));
+            issues += 1;
         }
     }
 
