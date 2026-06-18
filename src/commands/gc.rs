@@ -3,6 +3,7 @@ use anyhow::{bail, Result};
 use crate::core::{
     notes::{load_notes, save_notes},
     output::{hint, success},
+    resurrect,
     tags::{load_tags, save_tags},
     tmux::{has_tmux, list_sessions},
 };
@@ -22,22 +23,25 @@ pub fn run() -> Result<()> {
 
     if dead_tag_sessions.is_empty() && dead_note_sessions.is_empty() {
         hint("nothing to clean up");
-        return Ok(());
-    }
+    } else {
+        if !dead_tag_sessions.is_empty() {
+            save_tags(&tags_store)?;
+            for s in &dead_tag_sessions {
+                success(&format!("removed tags for dead session: {s}"));
+            }
+        }
 
-    if !dead_tag_sessions.is_empty() {
-        save_tags(&tags_store)?;
-        for s in &dead_tag_sessions {
-            success(&format!("removed tags for dead session: {s}"));
+        if !dead_note_sessions.is_empty() {
+            save_notes(&notes_store)?;
+            for s in &dead_note_sessions {
+                success(&format!("removed note for dead session: {s}"));
+            }
         }
     }
 
-    if !dead_note_sessions.is_empty() {
-        save_notes(&notes_store)?;
-        for s in &dead_note_sessions {
-            success(&format!("removed note for dead session: {s}"));
-        }
-    }
+    // Reconcile resurrect's snapshot with live tmux — purges ghosts of sessions
+    // that died outside muxx, even when there was no muxx metadata to clean.
+    resurrect::save_snapshot();
 
     Ok(())
 }

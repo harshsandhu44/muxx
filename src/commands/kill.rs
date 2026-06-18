@@ -3,6 +3,7 @@ use anyhow::{bail, Result};
 use crate::core::{
     env::is_inside_tmux,
     output::success,
+    resurrect,
     tmux::{current_session, has_session, has_tmux, kill_session},
 };
 
@@ -26,6 +27,8 @@ pub fn run(name: &str, force: bool) -> Result<()> {
     if !kill_session(name) {
         bail!("failed to kill session: {name}");
     }
+
+    resurrect::save_snapshot();
 
     success(&format!("killed: {name}"));
     Ok(())
