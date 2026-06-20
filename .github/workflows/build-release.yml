@@ -33,7 +33,7 @@ jobs:
           TAG="${INPUT_TAG:-${GITHUB_REF_NAME}}"
           echo "TAG_NAME=$TAG" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG_NAME }}
 
@@ -118,7 +118,7 @@ jobs:
           echo "SHA256_X86_MAC=$(sha256sum muxx-x86_64-apple-darwin.tar.gz       | awk '{print $1}')" >> $GITHUB_ENV
           echo "SHA256_LINUX=$(sha256sum   muxx-x86_64-unknown-linux-musl.tar.gz | awk '{print $1}')" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: harshsandhu44/homebrew-muxx
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
