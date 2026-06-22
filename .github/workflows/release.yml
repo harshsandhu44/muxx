@@ -9,7 +9,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -52,7 +52,7 @@ jobs:
     outputs:
       tag: ${{ steps.extract-tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -90,7 +90,7 @@ jobs:
             os: ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.release-plz.outputs.tag }}
 
@@ -169,7 +169,7 @@ jobs:
           echo "SHA256_X86_MAC=$(sha256sum muxx-x86_64-apple-darwin.tar.gz       | awk '{print $1}')" >> $GITHUB_ENV
           echo "SHA256_LINUX=$(sha256sum   muxx-x86_64-unknown-linux-musl.tar.gz | awk '{print $1}')" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: harshsandhu44/homebrew-muxx
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
