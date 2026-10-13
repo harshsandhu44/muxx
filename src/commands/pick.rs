@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use anyhow::{bail, Result};
 
-use crate::commands::connect::do_attach;
+use crate::commands::connect::{self, idle_aliases};
 use crate::core::{
     output::hint,
     tags::load_tags,
@@ -17,6 +17,12 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
 
     let mut sessions = list_sessions();
     let tags_store = load_tags();
+    // Tags live on sessions, so a tag filter hides not-yet-running aliases.
+    let aliases = if filter_tags.is_empty() {
+        idle_aliases(&sessions)
+    } else {
+        Vec::new()
+    };
 
     // Apply tag filter: keep sessions that have ALL of the requested tags.
     if !filter_tags.is_empty() {
@@ -30,7 +36,7 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
         });
     }
 
-    if sessions.is_empty() {
+    if sessions.is_empty() && aliases.is_empty() {
         hint("no sessions");
         return Ok(());
     }
@@ -47,6 +53,11 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
                 format!("{}\t{}", s.name, tags.join(", "))
             }
         })
+        .chain(
+            aliases
+                .iter()
+                .map(|(name, cwd)| format!("{name}\t(new) {cwd}")),
+        )
         .collect::<Vec<_>>()
         .join("\n");
 
@@ -75,11 +86,13 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
 
     let raw = String::from_utf8_lossy(&output.stdout);
     // Extract session name — it's the part before the tab (tags follow after \t).
-    let session_name = raw.split('\t').next().unwrap_or("").trim().to_string();
+    let line = raw.lines().next().unwrap_or("");
+    let session_name = line.split('\t').next().unwrap_or("").trim().to_string();
 
     if session_name.is_empty() {
         return Ok(());
     }
 
-    do_attach(&session_name, no_attach)
+    // Same path as `muxx <name>`: attaches a live session or creates from an alias.
+    connect::run(Some(&session_name), None, None, no_attach, None, false)
 }
