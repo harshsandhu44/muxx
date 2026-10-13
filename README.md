@@ -213,7 +213,7 @@ also honored).
 |                       | `connect <name>`             | `connect -c <dir>`           | `attach <name>`              |
 | --------------------- | ---------------------------- | ---------------------------- | ---------------------------- |
 | Input                 | session name or config alias | directory path               | tmux session name            |
-| Creates session?      | only if config alias         | yes (if not exists)          | **no**                       |
+| Creates session?      | if config alias or zoxide match | yes (if not exists)          | **no**                       |
 | Runs startup command? | yes (if config alias)        | yes (if configured)          | no                           |
 | Use when              | switching to a known alias   | starting work in a directory | returning to a named session |
 
@@ -223,6 +223,10 @@ also honored).
 # Connect to a config alias (resolves to its configured cwd + startup command)
 muxx connect myapp
 muxx c myapp              # alias
+
+# No alias or session named "api"? Falls back to zoxide (if installed) and
+# creates a session in its best match, e.g. ~/Code/oss/api
+muxx api
 
 # Attach to a running session by name (errors if it doesn't exist)
 muxx attach work

@@ -30,6 +30,8 @@ argv
                                    (no TTY outside tmux → leave detached + hint)
 ```
 
+`muxx connect <target>` (no `-c`) resolves in order: config alias → exact live session → unique fuzzy live session → `zoxide query <target>` (if zoxide is on PATH) → "session not found". A zoxide hit enters the `-c <dir>` flow above.
+
 ## Entry point
 
 `src/main.rs` declares three modules (`cli`, `commands`, `core`) and calls `cli::run()`. On error it prints to stderr and exits with code 1. Errors propagate via `anyhow::Result`.
