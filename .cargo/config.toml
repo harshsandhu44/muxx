@@ -1,0 +1,10 @@
+# Tests run against the developer's real tmux server and home directory. These
+# defaults keep `cargo test` away from real user data; tests that exercise these
+# paths set their own values, which take precedence.
+[env]
+# Without this every created session runs tmux-resurrect's save.sh and
+# overwrites the developer's restore snapshot.
+MUXX_RESURRECT_SAVE_SCRIPT = "/usr/bin/true"
+# kill/rename/gc rewrite the tags and notes stores.
+MUXX_TAGS_PATH = { value = "target/test-data/tags.toml", relative = true }
+MUXX_NOTES_PATH = { value = "target/test-data/notes.toml", relative = true }
