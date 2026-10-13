@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0](https://github.com/harshsandhu44/muxx/compare/v1.12.6...v1.13.0) - 2026-10-13
+
+### Added
+
+- *(pick)* include config aliases ([#88](https://github.com/harshsandhu44/muxx/pull/88))
+- *(connect)* path-first session lookup ([#87](https://github.com/harshsandhu44/muxx/pull/87))
+
+### Fixed
+
+- *(tmux)* use exact-match session targets ([#85](https://github.com/harshsandhu44/muxx/pull/85))
+
+### Other
+
+- *(deps)* bump dirs from 6.0.0 to 7.0.0 ([#84](https://github.com/harshsandhu44/muxx/pull/84))
+- *(deps)* bump toml from 1.1.3+spec-1.1.0 to 1.1.8+spec-1.1.0 ([#83](https://github.com/harshsandhu44/muxx/pull/83))
+- *(deps)* bump clap_complete from 4.6.7 to 4.6.11 ([#81](https://github.com/harshsandhu44/muxx/pull/81))
+- *(deps)* bump serde_json from 1.0.150 to 1.0.151 ([#79](https://github.com/harshsandhu44/muxx/pull/79))
+- keep cargo test off real resurrect snapshots, tags and notes ([#89](https://github.com/harshsandhu44/muxx/pull/89))
+- *(connect)* single attach path ([#86](https://github.com/harshsandhu44/muxx/pull/86))
+
 ## [1.12.6](https://github.com/harshsandhu44/muxx/compare/v1.12.5...v1.12.6) - 2026-07-29
 
 ### Other
