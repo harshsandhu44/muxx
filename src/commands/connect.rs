@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::IsTerminal;
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::{bail, Result};
 
@@ -54,9 +55,19 @@ pub fn run(
         }
 
         // Existing tmux session by name (exact, then fuzzy)
-        let name = resolve_live_session(target)?;
-        info(&format!("reused: {name}"));
-        return do_attach(&name, no_attach);
+        if let Some(name) = resolve_live_session(target)? {
+            info(&format!("reused: {name}"));
+            return do_attach(&name, no_attach);
+        }
+
+        // Last resort: a directory zoxide knows
+        if let Some(dir) = zoxide_query(target) {
+            info(&format!("zoxide: {target} → {dir}"));
+            return run_dir_based(Some(&dir), name_override, no_attach, cmd_flag, force);
+        }
+
+        hint("run 'muxx ls' to see active sessions");
+        bail!("session not found: {target}");
     }
 
     // No args: fall back to current directory
@@ -77,9 +88,10 @@ pub fn idle_aliases(live: &[TmuxSession]) -> Vec<(String, String)> {
 }
 
 /// Resolve `query` to a live session: exact name first, then a unique fuzzy match.
-pub fn resolve_live_session(query: &str) -> Result<String> {
+/// `None` when nothing matches; ambiguous matches are an error.
+fn resolve_live_session(query: &str) -> Result<Option<String>> {
     if has_session(query) {
-        return Ok(query.to_string());
+        return Ok(Some(query.to_string()));
     }
 
     let sessions = list_sessions();
@@ -87,13 +99,10 @@ pub fn resolve_live_session(query: &str) -> Result<String> {
     let matches = fuzzy::find_matches(query, &names);
 
     match matches.as_slice() {
-        [] => {
-            hint("run 'muxx ls' to see active sessions");
-            bail!("session not found: {query}");
-        }
+        [] => Ok(None),
         [only] => {
             info(&format!("matched session '{only}'"));
-            Ok(only.to_string())
+            Ok(Some(only.to_string()))
         }
         _ => {
             for m in &matches {
@@ -102,6 +111,16 @@ pub fn resolve_live_session(query: &str) -> Result<String> {
             bail!("ambiguous session name '{query}', did you mean one of the above?");
         }
     }
+}
+
+/// Best-ranked zoxide match for `query`; None if zoxide is missing or knows nothing.
+fn zoxide_query(query: &str) -> Option<String> {
+    let out = Command::new("zoxide")
+        .args(["query", "--", query])
+        .output()
+        .ok()?;
+    let dir = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    (out.status.success() && !dir.is_empty()).then_some(dir)
 }
 
 fn run_dir_based(

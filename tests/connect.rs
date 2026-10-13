@@ -583,3 +583,69 @@ fn connect_same_basename_falls_back_to_parent_basename() {
     second.success().stdout(contains("created: oss-api"));
     again.success().stdout(contains("reused: oss-api"));
 }
+
+/// Put a fake `zoxide` that runs `body` first on PATH; returns (bin dir, PATH value).
+#[cfg(unix)]
+fn fake_zoxide(body: &str) -> (TempDir, String) {
+    use std::os::unix::fs::PermissionsExt;
+    let bin = TempDir::new().unwrap();
+    let script = bin.path().join("zoxide");
+    std::fs::write(&script, format!("#!/bin/sh\n{body}\n")).unwrap();
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!(
+        "{}:{}",
+        bin.path().display(),
+        std::env::var("PATH").unwrap_or_default()
+    );
+    (bin, path)
+}
+
+#[cfg(unix)]
+#[test]
+fn connect_falls_back_to_zoxide() {
+    let parent = TempDir::new().unwrap();
+    let dir = parent.path().join("muxx-test-zoxide-dir");
+    std::fs::create_dir(&dir).unwrap();
+    let dir = dir.canonicalize().unwrap();
+    let (_bin, path) = fake_zoxide(&format!("echo '{}'", dir.display()));
+    let session = "muxx-test-zoxide-dir";
+
+    let output = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "muxx-zoxide-query-xyz"])
+        .env("PATH", &path)
+        .output()
+        .unwrap();
+
+    let session_path = std::process::Command::new("tmux")
+        .args(["display-message", "-p", "-t", session, "#{session_path}"])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", session])
+        .status();
+
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("created: muxx-test-zoxide-dir"));
+    assert_eq!(session_path, dir.to_string_lossy());
+}
+
+#[cfg(unix)]
+#[test]
+fn connect_zoxide_no_match_still_fails() {
+    let (_bin, path) = fake_zoxide("exit 1");
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "muxx-zoxide-nomatch-xyz"])
+        .env("PATH", &path)
+        .assert()
+        .failure()
+        .stderr(contains("session not found"));
+}
