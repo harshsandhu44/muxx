@@ -1,0 +1,5 @@
+# Tests create sessions on the real tmux server; without this every one of them
+# runs tmux-resurrect's save.sh and overwrites the developer's restore snapshot.
+# Tests that exercise the integration set their own MUXX_RESURRECT_SAVE_SCRIPT.
+[env]
+MUXX_RESURRECT_SAVE_SCRIPT = "/usr/bin/true"

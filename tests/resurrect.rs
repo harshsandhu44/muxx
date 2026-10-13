@@ -172,15 +172,20 @@ fn kill_succeeds_when_resurrect_not_installed() {
         .assert()
         .success();
 
-    // Point at a path that does not exist, and an empty config dir so no real
-    // plugin is probed into. The kill must still succeed with no error output.
+    // Point at a path that does not exist, and an empty HOME/config dir so the
+    // developer's real plugin is not probed into. The kill must still succeed
+    // with no error output.
     let empty_cfg = tempfile::NamedTempFile::new().unwrap();
     std::fs::write(empty_cfg.path(), "").unwrap();
+    let empty_home = tempfile::TempDir::new().unwrap();
 
     Command::cargo_bin("muxx")
         .unwrap()
         .args(["kill", session])
         .env_remove("TMUX")
+        .env_remove("TMUX_PLUGIN_MANAGER_PATH")
+        .env("HOME", empty_home.path())
+        .env("XDG_CONFIG_HOME", empty_home.path())
         .env("MUXX_RESURRECT_SAVE_SCRIPT", "/nonexistent/muxx/save.sh")
         .env("MUXX_CONFIG_PATH", empty_cfg.path())
         .assert()
