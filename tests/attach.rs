@@ -29,7 +29,7 @@ fn attach_nonexistent_session_fails() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("does not exist"));
+    assert!(stderr.contains("session not found"));
 }
 
 #[test]
@@ -43,7 +43,7 @@ fn attach_alias_works() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("does not exist"));
+    assert!(stderr.contains("session not found"));
 }
 
 // --- fuzzy matching ---
@@ -65,10 +65,10 @@ fn fuzzy_match_resolves_single_candidate() {
     kill_session(session);
 
     // The process will fail because there's no real terminal to attach to,
-    // but it should NOT print "does not exist" — it should match and attempt to attach.
+    // but it should NOT print "session not found" — it should match and attempt to attach.
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        !stderr.contains("does not exist"),
+        !stderr.contains("session not found"),
         "expected fuzzy match, got: {stderr}"
     );
 }
@@ -84,7 +84,7 @@ fn fuzzy_no_match_shows_does_not_exist() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("does not exist"));
+    assert!(stderr.contains("session not found"));
 }
 
 // --- attach - (last session) ---

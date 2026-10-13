@@ -144,8 +144,14 @@ pub fn get_session_paths() -> HashMap<String, String> {
     map
 }
 
+/// Exact-match target. A bare `-t name` lets tmux fall back to prefix and
+/// glob matching, so `kill web` would hit `web-old`.
+fn exact(name: &str) -> String {
+    format!("={name}")
+}
+
 pub fn has_session(name: &str) -> bool {
-    run(&["has-session", "-t", name]).exit_code == 0
+    run(&["has-session", "-t", &exact(name)]).exit_code == 0
 }
 
 pub fn create_session(name: &str, cwd: &str) -> bool {
@@ -154,12 +160,12 @@ pub fn create_session(name: &str, cwd: &str) -> bool {
 
 /// Attaches to a session (used outside tmux). Inherits the terminal.
 pub fn attach_session(name: &str) -> bool {
-    run_interactive(&["attach-session", "-t", name]) == 0
+    run_interactive(&["attach-session", "-t", &exact(name)]) == 0
 }
 
 /// Switches the current tmux client to another session (used inside tmux).
 pub fn switch_client(name: &str) -> bool {
-    run_interactive(&["switch-client", "-t", name]) == 0
+    run_interactive(&["switch-client", "-t", &exact(name)]) == 0
 }
 
 /// Switches the current tmux client to the previously active session.
@@ -170,16 +176,16 @@ pub fn switch_to_last() -> bool {
 /// Sends a command to the first pane of a session, followed by Enter.
 /// Used only on new session creation — no escaping is performed.
 pub fn send_keys(session: &str, cmd: &str) -> bool {
-    let target = format!("{session}:");
+    let target = format!("{}:", exact(session));
     run(&["send-keys", "-t", &target, cmd, "Enter"]).exit_code == 0
 }
 
 pub fn kill_session(name: &str) -> bool {
-    run(&["kill-session", "-t", name]).exit_code == 0
+    run(&["kill-session", "-t", &exact(name)]).exit_code == 0
 }
 
 pub fn rename_session(old: &str, new: &str) -> bool {
-    run(&["rename-session", "-t", old, new]).exit_code == 0
+    run(&["rename-session", "-t", &exact(old), new]).exit_code == 0
 }
 
 pub fn current_session() -> Option<String> {
