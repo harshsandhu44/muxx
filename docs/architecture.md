@@ -21,8 +21,8 @@ argv
        └─ commands::connect::run()
             ├─ core::config        load ~/.config/muxx/config.toml (if present)
             ├─ core::env           expand ~, resolve absolute path
-            ├─ core::session_name  derive session name from directory basename
-            ├─ core::tmux          check if session exists (tmux ls)
+            ├─ core::tmux          live session already rooted at <dir>? reuse it
+            ├─ core::session_name  else derive name: basename, then parent-basename
             │    ├─ [new session]  tmux new-session -d -s <name> -c <dir>
             │    │                 optionally: tmux send-keys "<startup cmd>" Enter
             │    └─ [exists]       (skip creation)

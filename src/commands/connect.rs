@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::io::IsTerminal;
+use std::path::Path;
 
 use anyhow::{bail, Result};
 
@@ -8,7 +10,7 @@ use crate::core::{
     fuzzy,
     output::{hint, info, success, warn},
     resurrect,
-    session_name::resolve_session_name,
+    session_name::{resolve_session_name, sanitize_session_name},
     tmux::{
         attach_session, create_session, get_session_paths, has_session, has_tmux, list_sessions,
         send_keys, switch_client,
@@ -98,58 +100,55 @@ fn run_dir_based(
 ) -> Result<()> {
     let dir = resolve_dir(dir_target)?;
     let dir_str = dir.to_string_lossy();
-    let session_name = resolve_session_name(&dir_str, name_override);
+    let paths = get_session_paths();
 
-    if session_name.is_empty() {
-        bail!(
-            "cannot derive a valid session name from \"{}\"",
-            name_override.unwrap_or(&dir_str)
-        );
-    }
-
-    let existed = has_session(&session_name);
-    let mut created = false;
-
-    if !existed {
-        if !create_session(&session_name, &dir_str) {
-            // Another process may have created it concurrently — reuse if so.
-            if !has_session(&session_name) {
-                bail!("failed to create session: {session_name}");
+    let session_name = match name_override.filter(|n| !n.trim().is_empty()) {
+        // Explicit name (--name or config alias): use it as-is; a session by that
+        // name in another directory is a hard error unless --force.
+        Some(name) => {
+            let name = resolve_session_name(&dir_str, Some(name));
+            if name.is_empty() {
+                bail!("cannot derive a valid session name from \"{dir_str}\"");
             }
-            info(&format!("reused: {session_name}"));
-        } else {
-            created = true;
-            success(&format!("created: {session_name}"));
-            if let Some(cmd) = startup_cmd {
-                if !send_keys(&session_name, cmd) {
-                    warn(&format!("startup command may not have been sent: {cmd}"));
+            if let Some(existing_path) = paths.get(&name) {
+                if !same_dir(existing_path, &dir) && !force {
+                    bail!(
+                        "session name collision: {name}\n\n  \
+                         Existing session path:  {existing_path}\n  \
+                         Requested path:         {dir_str}\n\n\
+                         Rename the new session:\n  \
+                         muxx --cwd {dir_str} --name <new-name>\n\n\
+                         Or attach to the existing session anyway:\n  \
+                         muxx --cwd {dir_str} --force"
+                    );
                 }
             }
+            name
         }
-    } else {
-        let paths = get_session_paths();
-        if let Some(existing_path) = paths.get(&session_name) {
-            let canon_existing = std::path::Path::new(existing_path)
-                .canonicalize()
-                .map(|p| p.to_string_lossy().into_owned())
-                .unwrap_or_else(|_| existing_path.clone());
-            let canon_dir = dir
-                .canonicalize()
-                .map(|p| p.to_string_lossy().into_owned())
-                .unwrap_or_else(|_| dir_str.to_string());
-            if canon_existing != canon_dir && !force {
-                bail!(
-                    "session name collision: {session_name}\n\n  \
-                     Existing session path:  {existing_path}\n  \
-                     Requested path:         {dir_str}\n\n\
-                     Rename the new session:\n  \
-                     muxx --cwd {dir_str} --name <new-name>\n\n\
-                     Or attach to the existing session anyway:\n  \
-                     muxx --cwd {dir_str} --force"
-                );
+        // Derived name: reuse whatever session already lives in this directory
+        // (even if renamed), else the first free name from the directory.
+        None => match session_at_dir(&dir, &paths) {
+            Some(name) => name,
+            None => free_name(&dir, &paths)?,
+        },
+    };
+
+    let mut created = false;
+    if paths.contains_key(&session_name) {
+        info(&format!("reused: {session_name}"));
+    } else if create_session(&session_name, &dir_str) {
+        created = true;
+        success(&format!("created: {session_name}"));
+        if let Some(cmd) = startup_cmd {
+            if !send_keys(&session_name, cmd) {
+                warn(&format!("startup command may not have been sent: {cmd}"));
             }
         }
+    } else if has_session(&session_name) {
+        // Another process created it concurrently — reuse.
         info(&format!("reused: {session_name}"));
+    } else {
+        bail!("failed to create session: {session_name}");
     }
 
     // Refresh resurrect's snapshot before attaching (attach hijacks the terminal).
@@ -158,6 +157,74 @@ fn run_dir_based(
     }
 
     do_attach(&session_name, no_attach)
+}
+
+fn same_dir(session_path: &str, dir: &Path) -> bool {
+    Path::new(session_path)
+        .canonicalize()
+        .is_ok_and(|p| p == dir)
+}
+
+/// The live session rooted at `dir`. If several are, prefer the one named after
+/// the directory, then the most recently attached.
+fn session_at_dir(dir: &Path, paths: &HashMap<String, String>) -> Option<String> {
+    let at_dir: Vec<&String> = paths
+        .iter()
+        .filter(|(_, p)| same_dir(p, dir))
+        .map(|(name, _)| name)
+        .collect();
+
+    match at_dir.as_slice() {
+        [] => None,
+        [only] => Some(only.to_string()),
+        _ => {
+            let derived = sanitize_session_name(&dir.to_string_lossy());
+            if at_dir.iter().any(|n| **n == derived) {
+                return Some(derived);
+            }
+            list_sessions()
+                .into_iter()
+                .filter(|s| at_dir.contains(&&s.name))
+                .max_by_key(|s| s.last_attached)
+                .map(|s| s.name)
+        }
+    }
+}
+
+/// Names to try for a new session in `dir`: `api`, then `oss-api` (parent-basename).
+fn name_candidates(dir: &Path) -> Vec<String> {
+    let base = sanitize_session_name(&dir.to_string_lossy());
+    if base.is_empty() {
+        return Vec::new();
+    }
+    let mut names = vec![base.clone()];
+    if let Some(parent) = dir.parent().and_then(|p| p.file_name()) {
+        let parent = sanitize_session_name(&parent.to_string_lossy());
+        if !parent.is_empty() {
+            names.push(format!("{parent}-{base}"));
+        }
+    }
+    names
+}
+
+fn free_name(dir: &Path, paths: &HashMap<String, String>) -> Result<String> {
+    let candidates = name_candidates(dir);
+    if candidates.is_empty() {
+        bail!(
+            "cannot derive a valid session name from \"{}\"",
+            dir.display()
+        );
+    }
+    match candidates.iter().find(|n| !paths.contains_key(*n)) {
+        Some(name) => Ok(name.clone()),
+        None => bail!(
+            "session name collision: {} already used by other directories\n\n  \
+             Pick a name:\n  \
+             muxx --cwd {} --name <new-name>",
+            candidates.join(", "),
+            dir.display()
+        ),
+    }
 }
 
 /// Hand the terminal to `session_name`: switch-client inside tmux, otherwise
@@ -184,4 +251,30 @@ pub fn do_attach(session_name: &str, no_attach: bool) -> Result<()> {
 
     let err = attach_session(session_name);
     bail!("failed to attach to session {session_name}: {err}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn name_candidates_basename_then_parent_basename() {
+        assert_eq!(
+            name_candidates(Path::new("/home/me/oss/api")),
+            vec!["api", "oss-api"]
+        );
+    }
+
+    #[test]
+    fn name_candidates_sanitizes_parent() {
+        assert_eq!(
+            name_candidates(Path::new("/x/My Projects/Web.App")),
+            vec!["web-app", "my-projects-web-app"]
+        );
+    }
+
+    #[test]
+    fn name_candidates_top_level_dir_has_no_parent_fallback() {
+        assert_eq!(name_candidates(Path::new("/api")), vec!["api"]);
+    }
 }
