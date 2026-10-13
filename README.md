@@ -561,7 +561,13 @@ muxx validates `~/.config/muxx/config.toml` on load. Check for malformed TOML (e
 When `connect` reuses an existing session whose working directory doesn't match the requested path, it prints a warning but still attaches. This happens when two different directories produce the same sanitized session name. Rename the session (`muxx rename`) or use `--name` to specify a distinct name.
 
 **Behavior differs inside vs outside tmux**
-Inside an existing session, muxx uses `switch-client`. Outside tmux, it uses `attach-session`. Use `--no-attach` to create a session without switching.
+Inside an existing session, muxx uses `switch-client`. Outside tmux, it replaces itself with `tmux attach-session`. Use `--no-attach` to create a session without switching.
+
+**Run from a launcher or script (no terminal)**
+When stdin isn't a terminal and you're not inside tmux, muxx creates the session but doesn't attach, prints `not a terminal — attach with 'muxx <name>'`, and exits 0.
+
+**`muxx last` outside tmux**
+Attaches the session tmux reports as most recently attached (`session_last_attached`), including ones you switched to with tmux keybindings. After a tmux server restart nothing has been attached yet, so attach a session once first.
 
 **Startup command did not run / ran unexpectedly**
 `startup` and `--cmd` only fire on **new session creation**. To force a re-run, kill the session first (`muxx kill <name>`) and reconnect.

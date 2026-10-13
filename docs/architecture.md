@@ -26,7 +26,8 @@ argv
             │    ├─ [new session]  tmux new-session -d -s <name> -c <dir>
             │    │                 optionally: tmux send-keys "<startup cmd>" Enter
             │    └─ [exists]       (skip creation)
-            └─ core::tmux          attach-session or switch-client
+            └─ core::tmux          switch-client, or exec into attach-session
+                                   (no TTY outside tmux → leave detached + hint)
 ```
 
 ## Entry point
