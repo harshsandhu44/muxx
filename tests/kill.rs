@@ -122,3 +122,29 @@ fn kill_nonexistent_does_not_output_to_stdout() {
         .failure()
         .stdout(predicate::str::is_empty());
 }
+
+#[test]
+fn kill_does_not_prefix_match_another_session() {
+    // tmux resolves a bare `-t name` by prefix; muxx must not kill `<name>-old`.
+    let longer = "muxx-test-kill-prefix-old";
+    let _ = std::process::Command::new("tmux")
+        .args(["new-session", "-d", "-s", longer])
+        .status();
+
+    let assert = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["kill", "muxx-test-kill-prefix"])
+        .assert();
+
+    let survived = std::process::Command::new("tmux")
+        .args(["has-session", "-t", &format!("={longer}")])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", &format!("={longer}")])
+        .status();
+
+    assert.failure().stderr(contains("session not found"));
+    assert!(survived, "'{longer}' must not be killed by a prefix");
+}

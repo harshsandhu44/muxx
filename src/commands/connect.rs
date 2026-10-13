@@ -3,13 +3,14 @@ use anyhow::{bail, Result};
 use crate::core::{
     config::{load_config, resolve_project},
     env::{is_inside_tmux, resolve_dir},
-    output::{info, success, warn},
+    fuzzy,
+    output::{hint, info, success, warn},
     resurrect,
     session_name::resolve_session_name,
     state,
     tmux::{
-        attach_session, create_session, get_session_paths, has_session, has_tmux, send_keys,
-        switch_client,
+        attach_session, create_session, get_session_paths, has_session, has_tmux, list_sessions,
+        send_keys, switch_client,
     },
 };
 
@@ -49,17 +50,42 @@ pub fn run(
             );
         }
 
-        // Existing tmux session by name
-        if has_session(target) {
-            info(&format!("reused: {target}"));
-            return do_attach(target, no_attach);
-        }
-
-        bail!("session not found: {target}");
+        // Existing tmux session by name (exact, then fuzzy)
+        let name = resolve_live_session(target)?;
+        info(&format!("reused: {name}"));
+        return do_attach(&name, no_attach);
     }
 
     // No args: fall back to current directory
     run_dir_based(None, name_override, no_attach, cmd_flag, force)
+}
+
+/// Resolve `query` to a live session: exact name first, then a unique fuzzy match.
+pub fn resolve_live_session(query: &str) -> Result<String> {
+    if has_session(query) {
+        return Ok(query.to_string());
+    }
+
+    let sessions = list_sessions();
+    let names: Vec<&str> = sessions.iter().map(|s| s.name.as_str()).collect();
+    let matches = fuzzy::find_matches(query, &names);
+
+    match matches.as_slice() {
+        [] => {
+            hint("run 'muxx ls' to see active sessions");
+            bail!("session not found: {query}");
+        }
+        [only] => {
+            info(&format!("matched session '{only}'"));
+            Ok(only.to_string())
+        }
+        _ => {
+            for m in &matches {
+                hint(&format!("  {m}"));
+            }
+            bail!("ambiguous session name '{query}', did you mean one of the above?");
+        }
+    }
 }
 
 fn run_dir_based(

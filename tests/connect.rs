@@ -447,3 +447,48 @@ fn connect_cmd_flag_does_not_prevent_session_creation() {
         .args(["kill-session", "-t", session])
         .status();
 }
+
+#[test]
+fn connect_fuzzy_matches_unique_session() {
+    let session = "muxx-test-connect-fuzzy-zq";
+    let _ = std::process::Command::new("tmux")
+        .args(["new-session", "-d", "-s", session])
+        .status();
+
+    let assert = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "connect-fuzzy-zq"])
+        .assert();
+
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-session", "-t", &format!("={session}")])
+        .status();
+
+    assert
+        .success()
+        .stdout(contains(format!("matched session '{session}'")));
+}
+
+#[test]
+fn connect_ambiguous_fuzzy_match_fails() {
+    let a = "muxx-test-ambig-zq-one";
+    let b = "muxx-test-ambig-zq-two";
+    for s in [a, b] {
+        let _ = std::process::Command::new("tmux")
+            .args(["new-session", "-d", "-s", s])
+            .status();
+    }
+
+    let assert = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "ambig-zq"])
+        .assert();
+
+    for s in [a, b] {
+        let _ = std::process::Command::new("tmux")
+            .args(["kill-session", "-t", &format!("={s}")])
+            .status();
+    }
+
+    assert.failure().stderr(contains("ambiguous"));
+}
