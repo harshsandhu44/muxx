@@ -557,8 +557,11 @@ Make sure the `source` / `eval` line is in your shell rc file and your shell was
 **Config parse error on startup**
 muxx validates `~/.config/muxx/config.toml` on load. Check for malformed TOML (e.g. missing quotes, bad key syntax). Run `muxx doctor` to see the exact parse error.
 
-**Warning: "session exists but its path is X, not Y"**
-When `connect` reuses an existing session whose working directory doesn't match the requested path, it prints a warning but still attaches. This happens when two different directories produce the same sanitized session name. Rename the session (`muxx rename`) or use `--name` to specify a distinct name.
+**How `muxx` picks the session for a directory**
+Without `--name`, muxx first looks for a live session already rooted in that directory and reuses it, even if you renamed it. Otherwise it names the new session after the directory (`api`), falling back to parent plus basename (`oss-api`) when another directory already owns that name. If both are taken, it errors and asks for `--name`.
+
+**`session name collision: <name>`**
+You passed an explicit name (`--name` or a config alias) that a session in another directory already uses. Pick a different `--name`, or pass `--force` to attach to the existing session anyway.
 
 **Behavior differs inside vs outside tmux**
 Inside an existing session, muxx uses `switch-client`. Outside tmux, it replaces itself with `tmux attach-session`. Use `--no-attach` to create a session without switching.
@@ -580,7 +583,6 @@ Attaches the session tmux reports as most recently attached (`session_last_attac
 
 - **Zoxide integration** — jump to frecency-ranked directories via `muxx`; resolves partial names through zoxide before falling back to config aliases
 - **JSON output for more commands** — `tag ls`, `note`, and `status` lack `--json`; would make muxx fully scriptable without parsing plain text
-- **Session collision detection at creation time** — `connect` already warns when an existing session's working directory doesn't match the requested one; a hard error on true name collisions (same name, different alias) is still pending
 
 ### Medium impact
 

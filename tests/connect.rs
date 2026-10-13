@@ -523,3 +523,63 @@ fn connect_without_terminal_creates_but_does_not_attach() {
         .stdout(contains("not a terminal"));
     assert!(exists, "session should be created even without a terminal");
 }
+
+/// Run muxx against an isolated tmux server rooted at `tmux_dir`.
+fn muxx_isolated(tmux_dir: &TempDir, args: &[&str]) -> assert_cmd::assert::Assert {
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(args)
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .assert()
+}
+
+fn tmux_isolated(tmux_dir: &TempDir, args: &[&str]) {
+    let _ = std::process::Command::new("tmux")
+        .args(args)
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .status();
+}
+
+#[test]
+fn connect_reuses_renamed_session_for_same_directory() {
+    let tmux_dir = TempDir::new().unwrap();
+    let root = TempDir::new().unwrap();
+    let dir = root.path().join("pathfirst");
+    std::fs::create_dir(&dir).unwrap();
+    let dir = dir.to_str().unwrap();
+
+    muxx_isolated(&tmux_dir, &["connect", "--no-attach", "--cwd", dir])
+        .success()
+        .stdout(contains("created: pathfirst"));
+    tmux_isolated(
+        &tmux_dir,
+        &["rename-session", "-t", "=pathfirst", "renamed"],
+    );
+
+    let assert = muxx_isolated(&tmux_dir, &["connect", "--no-attach", "--cwd", dir]);
+    tmux_isolated(&tmux_dir, &["kill-server"]);
+
+    assert.success().stdout(contains("reused: renamed"));
+}
+
+#[test]
+fn connect_same_basename_falls_back_to_parent_basename() {
+    let tmux_dir = TempDir::new().unwrap();
+    let root = TempDir::new().unwrap();
+    let work = root.path().join("work/api");
+    let oss = root.path().join("oss/api");
+    std::fs::create_dir_all(&work).unwrap();
+    std::fs::create_dir_all(&oss).unwrap();
+    let (work, oss) = (work.to_str().unwrap(), oss.to_str().unwrap());
+
+    let first = muxx_isolated(&tmux_dir, &["connect", "--no-attach", "--cwd", work]);
+    let second = muxx_isolated(&tmux_dir, &["connect", "--no-attach", "--cwd", oss]);
+    let again = muxx_isolated(&tmux_dir, &["connect", "--no-attach", "--cwd", oss]);
+    tmux_isolated(&tmux_dir, &["kill-server"]);
+
+    first.success().stdout(contains("created: api"));
+    second.success().stdout(contains("created: oss-api"));
+    again.success().stdout(contains("reused: oss-api"));
+}
