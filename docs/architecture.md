@@ -26,7 +26,8 @@ argv
             │    ├─ [new session]  tmux new-session -d -s <name> -c <dir>
             │    │                 optionally: tmux send-keys "<startup cmd>" Enter
             │    └─ [exists]       (skip creation)
-            └─ core::tmux          attach-session or switch-client
+            └─ core::tmux          switch-client, or exec into attach-session
+                                   (no TTY outside tmux → leave detached + hint)
 ```
 
 ## Entry point
@@ -79,9 +80,8 @@ Utilities shared across command modules:
 | `tags.rs` | Loads and saves `~/.config/muxx/tags.toml`; `TagsStore` maps session names to sorted tag lists; `delete_tag` removes a tag globally across all sessions |
 | `notes.rs` | Loads and saves `~/.config/muxx/notes.toml`; `NotesStore` maps session names to a single string note |
 | `env.rs` | `is_inside_tmux()`, home expansion, directory resolution |
-| `tmux.rs` | Wraps tmux CLI calls; `run()` captures stdout, `run_interactive()` inherits stdio for attach/switch |
+| `tmux.rs` | Wraps tmux CLI calls; `run()` captures stdout, `run_interactive()` inherits stdio for switch-client; `attach_session()` execs into `tmux attach` |
 | `session_name.rs` | Sanitizes arbitrary strings into valid tmux session names (lowercase, hyphens) |
-| `state.rs` | Persists the last-attached session name to `~/.local/share/muxx/last_session` |
 | `output.rs` | ANSI-colored print helpers (`success`, `info`, `warn`, `error`, `hint`); color is gated by TTY detection, `NO_COLOR`, and the `--no-color` flag (`set_no_color`/`stdout_color`) |
 | `fuzzy.rs` | Two-pass substring/subsequence matching used for fuzzy session lookup |
 | `resurrect.rs` | Re-runs tmux-resurrect's `save.sh` after session mutations so its saved snapshot stays in sync (issue #60); locates the script via `MUXX_RESURRECT_SAVE_SCRIPT`, config override, or probed plugin paths |

@@ -25,13 +25,12 @@ muxx is a tmux session automation CLI. Single binary crate, no library crates.
 - **`cli.rs`** — clap derive macros define `Cli` struct and `Commands` enum; dispatches to command handlers
 - **`commands/`** — one file per subcommand (`connect`, `list`, `kill`, `current`, `note`, `gc`, `status`, `completion`, …), each exports `pub fn run() -> Result<()>`
 - **`core/`** — shared utilities:
-  - `tmux.rs` — subprocess wrapper; `run()` captures stdout, `run_interactive()` inherits stdio (needed for attach/switch); public functions like `create_session()`, `attach_session()`, `switch_client()`
+  - `tmux.rs` — subprocess wrapper; `run()` captures stdout, `run_interactive()` inherits stdio (switch-client), `attach_session()` execs into `tmux attach`; public functions like `create_session()`, `attach_session()`, `switch_client()`
   - `config.rs` — `MuxxConfig` loaded from `~/.config/muxx/config.toml` (or `MUXX_CONFIG_PATH` env var); `HashMap<String, ProjectConfig>` with optional `startup` command
   - `tags.rs` — `TagsStore` loaded from `~/.config/muxx/tags.toml` (or `MUXX_TAGS_PATH` env var)
   - `notes.rs` — `NotesStore` loaded from `~/.config/muxx/notes.toml` (or `MUXX_NOTES_PATH` env var)
   - `env.rs` — `is_inside_tmux()`, `expand_home()`, `resolve_dir()`
   - `session_name.rs` — sanitizes path-derived names (basename → lowercase, spaces/invalid chars → hyphens); respects `--name` override
-  - `state.rs` — persists last-attached session name to `~/.local/share/muxx/last_session`
   - `fuzzy.rs` — two-pass substring/subsequence matching used for session lookup
   - `output.rs` — ANSI color helpers (`success`, `info`, `error`, `hint`)
 

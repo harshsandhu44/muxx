@@ -4,7 +4,6 @@ use crate::core::{
     output::success,
     resurrect,
     session_name::sanitize_session_name,
-    state,
     tmux::{has_session, has_tmux, rename_session},
 };
 
@@ -31,8 +30,6 @@ pub fn run(from: &str, to: &str) -> Result<()> {
     if !rename_session(from, &to) {
         bail!("failed to rename session: {from}");
     }
-
-    state::update_last_session_if(from, &to);
 
     // Migrate tags to the new session name (best-effort).
     let mut tag_store = crate::core::tags::load_tags();

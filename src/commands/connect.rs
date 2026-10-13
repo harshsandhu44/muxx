@@ -1,3 +1,5 @@
+use std::io::IsTerminal;
+
 use anyhow::{bail, Result};
 
 use crate::core::{
@@ -7,7 +9,6 @@ use crate::core::{
     output::{hint, info, success, warn},
     resurrect,
     session_name::resolve_session_name,
-    state,
     tmux::{
         attach_session, create_session, get_session_paths, has_session, has_tmux, list_sessions,
         send_keys, switch_client,
@@ -159,20 +160,28 @@ fn run_dir_based(
     do_attach(&session_name, no_attach)
 }
 
-fn do_attach(session_name: &str, no_attach: bool) -> Result<()> {
+/// Hand the terminal to `session_name`: switch-client inside tmux, otherwise
+/// exec into `tmux attach`. Without a terminal (launchers, scripts) the session
+/// is left detached and a hint is printed instead of failing.
+pub fn do_attach(session_name: &str, no_attach: bool) -> Result<()> {
     if no_attach {
         return Ok(());
     }
-
-    state::save_last_session(session_name);
 
     if is_inside_tmux() {
         if !switch_client(session_name) {
             bail!("failed to switch to session: {session_name}");
         }
-    } else if !attach_session(session_name) {
-        bail!("failed to attach to session: {session_name}");
+        return Ok(());
     }
 
-    Ok(())
+    if !std::io::stdin().is_terminal() {
+        hint(&format!(
+            "not a terminal — attach with 'muxx {session_name}'"
+        ));
+        return Ok(());
+    }
+
+    let err = attach_session(session_name);
+    bail!("failed to attach to session {session_name}: {err}")
 }

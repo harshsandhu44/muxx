@@ -492,3 +492,34 @@ fn connect_ambiguous_fuzzy_match_fails() {
 
     assert.failure().stderr(contains("ambiguous"));
 }
+
+#[test]
+fn connect_without_terminal_creates_but_does_not_attach() {
+    // assert_cmd gives the child a non-TTY stdin, like a launcher or script.
+    let tmux_dir = TempDir::new().unwrap();
+    let assert = Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--name", "muxx-test-no-tty"])
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .assert();
+
+    let exists = std::process::Command::new("tmux")
+        .args(["has-session", "-t", "=muxx-test-no-tty"])
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    let _ = std::process::Command::new("tmux")
+        .args(["kill-server"])
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .status();
+
+    assert
+        .success()
+        .stdout(contains("created: muxx-test-no-tty"))
+        .stdout(contains("not a terminal"));
+    assert!(exists, "session should be created even without a terminal");
+}

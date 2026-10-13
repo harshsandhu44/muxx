@@ -3,12 +3,11 @@ use std::process::{Command, Stdio};
 
 use anyhow::{bail, Result};
 
+use crate::commands::connect::do_attach;
 use crate::core::{
-    env::is_inside_tmux,
     output::hint,
-    state,
     tags::load_tags,
-    tmux::{attach_session, has_tmux, list_sessions, switch_client},
+    tmux::{has_tmux, list_sessions},
 };
 
 pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
@@ -78,19 +77,9 @@ pub fn run(no_attach: bool, filter_tags: &[String]) -> Result<()> {
     // Extract session name — it's the part before the tab (tags follow after \t).
     let session_name = raw.split('\t').next().unwrap_or("").trim().to_string();
 
-    if session_name.is_empty() || no_attach {
+    if session_name.is_empty() {
         return Ok(());
     }
 
-    state::save_last_session(&session_name);
-
-    if is_inside_tmux() {
-        if !switch_client(&session_name) {
-            bail!("failed to switch to session: {session_name}");
-        }
-    } else if !attach_session(&session_name) {
-        bail!("failed to attach to session: {session_name}");
-    }
-
-    Ok(())
+    do_attach(&session_name, no_attach)
 }
