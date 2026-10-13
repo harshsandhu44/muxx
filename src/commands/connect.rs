@@ -13,7 +13,7 @@ use crate::core::{
     session_name::{resolve_session_name, sanitize_session_name},
     tmux::{
         attach_session, create_session, get_session_paths, has_session, has_tmux, list_sessions,
-        send_keys, switch_client,
+        send_keys, switch_client, TmuxSession,
     },
 };
 
@@ -61,6 +61,19 @@ pub fn run(
 
     // No args: fall back to current directory
     run_dir_based(None, name_override, no_attach, cmd_flag, force)
+}
+
+/// Config aliases with no live session of the same name, as sorted `(alias, cwd)`.
+/// Shared by `connect` completion and `pick`.
+pub fn idle_aliases(live: &[TmuxSession]) -> Vec<(String, String)> {
+    let mut aliases: Vec<(String, String)> = load_config()
+        .projects
+        .into_iter()
+        .filter(|(name, _)| !live.iter().any(|s| &s.name == name))
+        .map(|(name, proj)| (name, proj.cwd))
+        .collect();
+    aliases.sort();
+    aliases
 }
 
 /// Resolve `query` to a live session: exact name first, then a unique fuzzy match.

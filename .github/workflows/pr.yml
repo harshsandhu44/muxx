@@ -35,11 +35,11 @@ jobs:
 
       - name: Install tmux (Ubuntu)
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y tmux
+        run: sudo apt-get install -y tmux fzf
 
       - name: Install tmux (macOS)
         if: runner.os == 'macOS'
-        run: brew install tmux
+        run: brew install tmux fzf
 
       - name: Start tmux server (macOS)
         if: runner.os == 'macOS'

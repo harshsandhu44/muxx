@@ -5,7 +5,7 @@ use clap_complete::engine::{ArgValueCompleter, CompletionCandidate};
 use clap_complete::Shell;
 
 use crate::commands;
-use crate::core::{config::load_config, output, tags::load_tags, tmux::list_sessions};
+use crate::core::{output, tags::load_tags, tmux::list_sessions};
 
 /// Live tmux sessions, each described with window count and attach state.
 fn complete_sessions(_prefix: &OsStr) -> Vec<CompletionCandidate> {
@@ -21,7 +21,7 @@ fn complete_sessions(_prefix: &OsStr) -> Vec<CompletionCandidate> {
 /// `connect` targets: live sessions plus configured project aliases.
 fn complete_connect_targets(_prefix: &OsStr) -> Vec<CompletionCandidate> {
     let sessions = list_sessions();
-    let live: std::collections::HashSet<String> = sessions.iter().map(|s| s.name.clone()).collect();
+    let aliases = commands::connect::idle_aliases(&sessions);
 
     let mut candidates: Vec<CompletionCandidate> = sessions
         .into_iter()
@@ -32,14 +32,9 @@ fn complete_connect_targets(_prefix: &OsStr) -> Vec<CompletionCandidate> {
         })
         .collect();
 
-    for (name, proj) in &load_config().projects {
-        // Avoid duplicating a live session that shares the alias name.
-        if live.contains(name) {
-            continue;
-        }
+    for (name, cwd) in aliases {
         candidates.push(
-            CompletionCandidate::new(name)
-                .help(Some(format!("config alias → {}", proj.cwd).into())),
+            CompletionCandidate::new(name).help(Some(format!("config alias → {cwd}").into())),
         );
     }
     candidates

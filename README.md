@@ -195,7 +195,7 @@ also honored).
 | `muxx connect [session] [-c <dir>] [--name <n>] [--no-attach] [--cmd "<cmd>"] [--force]` | `c`   | Attach to an existing session/alias, or create one from a directory (`-c`) |
 | `muxx ls [--json] [--tag <tag>]...`                                                      |       | List sessions (shortcut for `session ls`)                                 |
 | `muxx kill <name> [--force]`                                                             | `k`   | Kill a session (shortcut for `session kill`)                              |
-| `muxx pick [--tag <tag>]...`                                                             | `p`   | Interactively pick a session with fzf (shortcut for `session pick`)       |
+| `muxx pick [--tag <tag>]...`                                                             | `p`   | Pick a session or config alias with fzf (shortcut for `session pick`)     |
 | `muxx last`                                                                              | `l`   | Re-attach to the last used session (shortcut for `session last`)          |
 | `muxx session <ls\|kill\|rename\|pick\|last\|new\|note>`                                 | `s`   | Manage sessions — canonical home for session verbs                        |
 | `muxx tag <add\|rm\|delete\|edit\|clear\|ls>`                                            | `t`   | Add, remove, delete, edit, or list tags on sessions                       |
@@ -341,7 +341,10 @@ muxx pick --tag work                # fzf picker pre-filtered to "work" sessions
 > my-project        python, work
   personal-site     personal
   scratch
+  api               (new) ~/code/api
 ```
+
+Configured project aliases with no running session are listed after live sessions, marked `(new)`. Picking one creates the session, with its `startup` command. `--tag` hides them, because tags belong to sessions.
 
 ---
 
