@@ -41,9 +41,10 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install tmux fzf
 
-      - name: Start tmux server (macOS)
-        if: runner.os == 'macOS'
-        run: tmux start-server; sleep 1
+      # Tests share the default tmux server. With no session it exits as soon as
+      # the last test session is killed, racing other tests' new-session calls.
+      - name: Keep a tmux server running
+        run: tmux new-session -d -s ci-anchor
 
       - name: Run tests
         run: cargo test
