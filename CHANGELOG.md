@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0](https://github.com/harshsandhu44/muxx/compare/v1.13.1...v1.14.0) - 2026-10-13
+
+### Added
+
+- *(connect)* fall back to zoxide when no alias or session matches ([#94](https://github.com/harshsandhu44/muxx/pull/94))
+
 ## [1.13.1](https://github.com/harshsandhu44/muxx/compare/v1.13.0...v1.13.1) - 2026-10-13
 
 ### Other
