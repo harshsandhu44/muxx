@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 
 use serde::Serialize;
@@ -158,9 +159,12 @@ pub fn create_session(name: &str, cwd: &str) -> bool {
     run(&["new-session", "-d", "-s", name, "-c", cwd]).exit_code == 0
 }
 
-/// Attaches to a session (used outside tmux). Inherits the terminal.
-pub fn attach_session(name: &str) -> bool {
-    run_interactive(&["attach-session", "-t", &exact(name)]) == 0
+/// Replaces this process with `tmux attach-session` (used outside tmux).
+/// Only returns if the exec itself fails.
+pub fn attach_session(name: &str) -> std::io::Error {
+    Command::new("tmux")
+        .args(["attach-session", "-t", &exact(name)])
+        .exec()
 }
 
 /// Switches the current tmux client to another session (used inside tmux).

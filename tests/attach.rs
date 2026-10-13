@@ -91,12 +91,13 @@ fn fuzzy_no_match_shows_does_not_exist() {
 
 #[test]
 fn attach_dash_without_prior_session_fails() {
+    let tmux_dir = tempfile::TempDir::new().unwrap();
     let output = Command::cargo_bin("muxx")
         .unwrap()
         .args(["attach", "-"])
         .env_remove("TMUX")
-        // Use a temp HOME so there's no leftover last_session state file.
-        .env("HOME", std::env::temp_dir())
+        // Fresh tmux server with no sessions, so nothing was ever attached.
+        .env("TMUX_TMPDIR", tmux_dir.path())
         .output()
         .unwrap();
 

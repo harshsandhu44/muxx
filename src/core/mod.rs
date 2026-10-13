@@ -5,6 +5,5 @@ pub mod notes;
 pub mod output;
 pub mod resurrect;
 pub mod session_name;
-pub mod state;
 pub mod tags;
 pub mod tmux;
