@@ -11,7 +11,7 @@ Jump into any project in one command. muxx creates a tmux session from a directo
 
 ```sh
 # Go to a project — creates the session if it doesn't exist, attaches if it does
-muxx connect ~/Code/myapp
+muxx connect -c ~/Code/myapp
 
 # Or just run `muxx` from inside the project directory
 cd ~/Code/myapp && muxx
