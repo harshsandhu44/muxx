@@ -25,7 +25,12 @@ struct Output {
 }
 
 fn run(args: &[&str]) -> Output {
-    let result = Command::new("tmux").args(args).output();
+    // A tmux server started here inherits our cwd for its whole life; if that
+    // project dir is later deleted, everything the server spawns fails getcwd.
+    let result = Command::new("tmux")
+        .args(args)
+        .current_dir(dirs::home_dir().unwrap_or_else(|| "/".into()))
+        .output();
 
     match result {
         Ok(out) => Output {
