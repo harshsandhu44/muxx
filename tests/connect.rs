@@ -649,3 +649,45 @@ fn connect_zoxide_no_match_still_fails() {
         .failure()
         .stderr(contains("session not found"));
 }
+
+/// A tmux server started by muxx must not inherit the project dir as its cwd:
+/// if that dir is later deleted, everything the server spawns fails getcwd.
+#[test]
+fn connect_starts_tmux_server_outside_project_dir() {
+    let tmux_dir = TempDir::new().unwrap();
+    let project = TempDir::new().unwrap();
+    let project_path = std::fs::canonicalize(project.path()).unwrap();
+    let session = "muxx-test-server-cwd";
+
+    Command::cargo_bin("muxx")
+        .unwrap()
+        .args(["connect", "--no-attach", "--name", session])
+        .current_dir(&project_path)
+        .env_remove("TMUX")
+        .env("TMUX_TMPDIR", tmux_dir.path())
+        .assert()
+        .success();
+
+    let tmux = |args: &[&str]| {
+        std::process::Command::new("tmux")
+            .args(args)
+            .env_remove("TMUX")
+            .env("TMUX_TMPDIR", tmux_dir.path())
+            .output()
+            .unwrap()
+    };
+    let pid = String::from_utf8(tmux(&["display", "-p", "-t", session, "#{pid}"]).stdout).unwrap();
+    let lsof = std::process::Command::new("lsof")
+        .args(["-a", "-p", pid.trim(), "-d", "cwd", "-Fn"])
+        .output()
+        .unwrap();
+    tmux(&["kill-server"]);
+
+    let lsof = String::from_utf8_lossy(&lsof.stdout);
+    let server_cwd = lsof.lines().find_map(|l| l.strip_prefix('n')).unwrap_or("");
+    assert!(
+        !server_cwd.is_empty(),
+        "could not read tmux server cwd: {lsof}"
+    );
+    assert_ne!(std::path::Path::new(server_cwd), project_path);
+}
