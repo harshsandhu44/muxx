@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.1](https://github.com/harshsandhu44/muxx/compare/v1.14.0...v1.14.1) - 2026-10-21
+
+### Fixed
+
+- *(tmux)* start tmux server from $HOME so it never holds a deletable cwd ([#97](https://github.com/harshsandhu44/muxx/pull/97))
+
 ## [1.14.0](https://github.com/harshsandhu44/muxx/compare/v1.13.1...v1.14.0) - 2026-10-13
 
 ### Added
